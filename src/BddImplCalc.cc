@@ -1,0 +1,726 @@
+//
+//      File     : BddImplCalc.cc
+//      Abstract : Implementation of BDD calclulations.
+//
+
+#include <BddImpl.h>
+#include <cassert>
+#include <algorithm>
+
+//      Function : BddImpl::apply
+//      Abstract : Apply OP to F and G with retry after gc if null..
+BDD
+BddImpl::apply(BDD f, BDD g, BddOp op)
+{
+  BDD rtn = apply2(f, g, op);
+  if (rtn == _nullNode && _gcLock == 0) {
+    gc(true, false);
+    rtn = apply2(f, g, op);
+  } // if
+
+  return rtn;
+} // BddImpl::apply
+
+
+//      Function : BddImpl::apply2
+//      Abstract : Apply OP to F and G.
+BDD
+BddImpl::apply2(BDD f, BDD g, BddOp op)
+{
+  BDD r = _nullNode;
+  switch (op) {
+    case NOT:
+      r = invert(f);
+      break;
+    case AND:
+      r = and2(f, g);
+      break;
+    case NAND:
+      r = invert(and2(f, g));
+      break;
+    case OR:
+      r = invert(and2(invert(f), invert(g)));
+      break;
+    case NOR:
+      r = and2(invert(f), invert(g));
+      break;
+    case XOR:
+      r = xor2(f, g);
+      break;
+    case XNOR:
+      r = invert(xor2(f, g));
+      break;
+    case IMPL:
+      r = invert(and2(f, invert(g)));
+      break;
+    default:
+    assert(false);
+  } // switch
+
+  return r;
+} // BddImpl::apply2
+
+
+//      Function : BddImpl::restrict
+//      Abstract : Computes the cofactor of f w.r.t. c.
+BDD
+BddImpl::restrict(BDD f, BDD c)
+{
+  BDD rtn = restrictRec(f, c);
+  if (rtn == _nullNode && _gcLock == 0) {
+    gc(true, false);
+    rtn = restrictRec(f, c);
+  } // if
+
+  return rtn;
+} // BddImpl::restrict
+
+
+//      Function : BddImpl::compose
+//      Abstract : Replace variable x with function g in function f.
+BDD
+BddImpl::compose(BDD f, BddVar x, BDD g)
+{
+  lockGC();
+  BDD poslit = getLit(x);
+  BDD neglit = getLit(-x);
+  BDD f1 = restrict(f, poslit);
+  BDD f0 = restrict(f, neglit);
+  BDD rtn = ite(g, f1, f0);
+  unlockGC();
+  if (rtn == _nullNode && _gcLock == 0) {
+    gc(true, false);
+    lockGC();
+    poslit = getLit(x);
+    neglit = getLit(-x);
+    f1 = restrict(f, poslit);
+    f0 = restrict(f, neglit);
+    rtn = ite(g, f1, f0);
+    unlockGC();
+  } // if
+
+  return rtn;
+} // BddImpl::compose
+
+
+//      Function : BddImpl::covers
+//      Abstract : Return true if f covers g.
+bool
+BddImpl::covers(BDD f, BDD g)
+{
+  BDD val = andConstant(invert(f), g);
+  return isZero(val);
+} // BddImpl::covers
+
+
+//      Function : BddImpl::cubeFactor
+//      Abstract : Computes the cube factor with the most
+//      literals. N.B.: This function does not have an automatic retry
+//      if the result is the null BDD.
+BDD
+BddImpl::cubeFactor(BDD f)
+{
+  BddVarVec supp(supportVec(f));
+  BDD rtn = _oneNode;
+  std::reverse(supp.begin(), supp.end());
+  for (const auto vdx : supp) {
+    BDD lit = getLit(vdx);
+    if (covers(lit, f)) {
+      BDD tmp = apply2(rtn, lit, AND);
+      rtn = tmp;
+    } else if (covers(invert(lit), f)) {
+      BDD tmp = apply2(rtn, invert(lit), AND);
+      rtn = tmp;
+    } // if a cofactor is zero
+  } //for each variable in support.
+
+  return rtn;
+} // BddImpl::cubeFactor
+
+
+//      Function : BddImpl::supportVec
+//      Abstract : Return the support of f as a vector of variables.
+BddVarVec
+BddImpl::supportVec(BDD f)
+{
+  BDD s = supportCubeRec(f);
+  unmarkNodes(f, 1);
+  BddVarVec rtn;
+  while (! isConstant(s)) {
+    rtn.push_back(getBddVar(s));
+    s = getHi(s);
+  } // while lits left
+  return rtn;
+} // BddImpl::supportVec
+
+
+//      Function : BddImpl::supportCube
+//      Abstract : Return the support of f as a vector of
+//      variables. N.B.: This function does not have an automatic
+//      retry if the result is the null BDD.
+BDD
+BddImpl::supportCube(BDD f)
+{
+  BDD rtn = supportCubeRec(f);
+  unmarkNodes(f, 1);
+  return rtn;
+} // BddImpl::supportCube
+
+
+//      Function : BddImpl::and2
+//      Abstract : Computes f*g.
+BDD
+BddImpl::and2(BDD f, BDD g)
+{
+  orderOps(f, g);
+
+  // Terminal cases.
+  if (isOne(f)) {
+    return g;
+  } else if (isZero(f)) {
+    return _zeroNode;
+  } else if (f == g) {
+    return f;
+  } else if (f == invert(g)) {
+    return _zeroNode;
+  } // if
+
+  BDD rtn = getAndCache(f, g);
+  if (!rtn) {
+    _cacheStats.incCompMiss();
+    unsigned int index = minIndex(f, g);
+    if (BDD hi = and2(restrict1(f, index),
+                      restrict1(g, index));
+        hi) {
+      if (BDD lo = and2(restrict0(f, index),
+                        restrict0(g, index));
+          lo) {
+        rtn = makeNode(index, hi, lo);
+        insertAndCache(f, g, rtn);
+      } // if lo
+    } // if hi
+  } else {
+    _cacheStats.incCompHit();
+  } // if
+
+  return rtn;
+} // BddImpl::and2
+
+
+//      Function : BddImpl::andConstant
+//      Abstract : Like and2(), but only returns constant 1, 0 or null
+//      node if not constant.
+BDD
+BddImpl::andConstant(BDD f, BDD g)
+{
+  orderOps(f, g);
+
+  // Terminal cases.
+  if (isZero(f) || isZero(g)) {
+    return _zeroNode;
+  } else if (isOne(f)) {
+    return (isOne(g)) ? _oneNode : _nullNode;
+  } else if (f == invert(g)) {
+    return _zeroNode;
+  } // if
+
+  BDD rtn = getAndCache(f, g);
+  if (!rtn) {
+    _cacheStats.incCompMiss();
+    unsigned int index = minIndex(f, g);
+    if (BDD hi = and2(restrict1(f, index),
+                      restrict1(g, index));
+        isConstant(hi)) {
+      if (BDD lo = and2(restrict0(f, index),
+                        restrict0(g, index));
+          isConstant(lo)) {
+        if (hi == lo) {
+          insertAndCache(f, g, hi);
+          return hi;
+        } else {
+          insertAndCache(f, g, _zeroNode);
+          return _zeroNode;
+        } // if
+      } // if lo
+    } // if hi
+  } else {
+    _cacheStats.incCompHit();
+  } // if
+
+  return rtn;
+} // BddImpl::andConstant
+
+
+//      Function : BddImpl::xor2
+//      Abstract : Computes f^g.
+BDD
+BddImpl::xor2(BDD f, BDD g)
+{
+  orderOps(f, g);
+
+  // Terminal cases.
+  if (isOne(f)) {
+    return invert(g);
+  } else if (isZero(f)) {
+    return g;
+  } else if (f == g) {
+    return _zeroNode;
+  } else if (f == invert(g)) {
+    return _oneNode;
+  } // if
+
+  BDD rtn = getXorCache(f, g);
+  if (!rtn) {
+    _cacheStats.incCompMiss();
+    unsigned int index = minIndex(f, g);
+    if (BDD hi = xor2(restrict1(f, index),
+                      restrict1(g, index));
+        hi) {
+      if (BDD lo = xor2(restrict0(f, index),
+                        restrict0(g, index));
+          lo) {
+        rtn = makeNode(index, hi, lo);
+        insertXorCache(f, g, rtn);
+      } // if lo
+    } // if hi
+  } else {
+    _cacheStats.incCompHit();
+  } // if
+
+  return rtn;
+} // BddImpl::xor2
+
+
+//      Function : BddImpl::ite
+//      Abstract : Computes if f then g else h.
+BDD
+BddImpl::ite(BDD f, BDD g, BDD h)
+{
+  assert(f >= 2);
+  assert(g >= 2);
+  assert(h >= 2);
+  bool inv = stdTrip(f, g, h);
+  BDD rtn = _nullNode;
+
+  if (isOne(f)) {
+    rtn = g;
+  } else if (g == h) {
+    rtn = g;
+  } else if (isOne(g) && isZero(h)) {
+    rtn = f;
+  } else {
+    rtn = getIteCache(f, g, h);
+    if (! rtn) {
+      _cacheStats.incCompMiss();
+      unsigned int index = minIndex(f, g, h);
+      BDD hi = ite(restrict1(f, index),
+                   restrict1(g, index),
+                   restrict1(h, index));
+      if (hi) {
+        BDD lo = ite(restrict0(f, index),
+                     restrict0(g, index),
+                     restrict0(h, index));
+        if (lo) {
+          rtn = makeNode(index, hi, lo);
+          insertIteCache(f, g, h, rtn);
+        } // if valid else node
+      } // if valid then node
+    } else {
+      _cacheStats.incCompHit();
+    } // if not in cache
+  } // test for terminal cases
+
+  if (rtn && inv) {
+    rtn = invert(rtn);
+  } // invert?
+
+  return rtn;
+} // BddImpl::ite
+
+
+//      Function : BddImpl::stdTrip
+//      Abstract : Standardize the ite triple among equivalent
+//      forms. Returns true if the standardized for produces the
+//      inverse.
+bool
+BddImpl::stdTrip(BDD &f, BDD &g, BDD &h)
+{
+  reduceThenElse(f, g, h);
+  swapArgs(f, g, h);
+  return stdNegation(f, g, h);
+} // BddImpl::stdTrip
+
+
+//      Function : BddImpl::reduceThenElse
+//      Abstract : Reduce g and h to constants if possible.
+void
+BddImpl::reduceThenElse(BDD &f, BDD &g, BDD &h)
+{
+  if (f == g) {
+    g = _oneNode;
+  } else if (f == invert(g)) {
+    g = _zeroNode;
+  } else if (f == h) {
+    h = _zeroNode;
+  } else if (f == invert(h)) {
+    h = _oneNode;
+  } // if g or h can be a constant
+} // BddImpl::reduceThenElse
+
+
+//      Function : BddImpl::swapArgs
+//      Abstract : Perform swaps if possible.
+
+void
+BddImpl::swapArgs(BDD &f, BDD &g, BDD &h)
+{
+  if (isOne(g)) {
+    condSwap(f, h);
+  } else if (isZero(h)) {
+    condSwap(f, g);
+  } else if (isOne(h)) {
+    condSwapNeg(f, g);
+  } else if (isZero(g)) {
+    condSwapNeg(f, h);
+  } else if (g == invert(h)) {
+    if (index(f) > index(g)) {
+      std::swap(f, g);
+      h = invert(g);
+    } // if
+  } // if
+} // BddImpl::swapArgs
+
+void BddImpl::condSwap(BDD &f, BDD &g){
+  if (index(f) > index(g)) {
+    std::swap(f, g);
+  } // if
+}
+
+void BddImpl::condSwapNeg(BDD &f, BDD &g){
+  if (index(f) > index(g)) {
+    std::swap(f, g);
+    f = invert(f);
+    g = invert(g);
+  } // if
+}
+
+//      Function : BddImpl::stdNegation
+//      Abstract : Standardize negations.
+bool
+BddImpl::stdNegation(BDD &f, BDD &g, BDD &h)
+{
+  bool inv = false;
+  if (isNegPhase(f)) {
+    if (isNegPhase(h)) {
+      f = invert(f);
+      g = invert(g);
+      h = invert(h);
+      std::swap(g, h);
+      inv = true;
+    } else {
+      f = invert(f);
+      std::swap(g, h);
+    } // if h inverted
+  } else {
+    if (isNegPhase(g)) {
+      g = invert(g);
+      h = invert(h);
+      inv = true;
+    } // if
+  } // if f inverted
+
+  return inv;
+} // BddImpl::stdNegation
+
+
+//      Function : BddImpl::restrictRec
+//      Abstract : Recursive worker function for restrict().
+BDD
+BddImpl::restrictRec(BDD f, BDD c)
+{
+  BDD rtn = restrictTerminal(f, c);
+  if (! rtn) {
+    unsigned int fdx = getIndex(f);
+    c = reduce(c, fdx);
+    BDD c1 = restrict1(c, fdx);
+    BDD c0 = restrict0(c, fdx);
+
+    if (isZero(c1)) {
+      rtn = restrict(getXLo(f), c0);
+    } else if (isZero(c0)) {
+      rtn = restrict(getXHi(f), c1);
+    } else {
+      BDD r1 = restrict(getXHi(f), c);
+      BDD r0 = restrict(getXLo(f), c);
+      rtn = makeNode(fdx, r1, r0);
+    } // if cube literal
+  } //if early termination
+
+  //if (rtn) {
+  //  auto bddPair = make_pair(f, c);
+  //  _restrictTbl[bddPair] = rtn;
+  //} // if
+
+  return rtn;
+} // BddImpl::restrictRec
+
+
+//      Function : BddImpl::restrictTerminal
+//      Abstract : Return the result if this is a terminal case.
+BDD
+BddImpl::restrictTerminal(BDD f, BDD c)
+{
+  BDD rtn = _nullNode;
+  if (isOne(c) || isConstant(f)) {
+    rtn = f;
+  } else if (f == c) {
+    rtn = _oneNode;
+  } else if (f == invert(c)) {
+    rtn = _zeroNode;
+  } // if
+
+  return rtn;
+} // BddImpl::restrictTerminal
+
+
+//      Function : BddImpl::reduce
+//      Abstract : While the top variable of c is greater than tgt,
+//      perform or-smoothing on it.
+BDD
+BddImpl::reduce(BDD f, unsigned int tgt)
+{
+  unsigned int idx = getIndex(f);
+  while (idx < tgt) {
+    unsigned int f1 = getXHi(f);
+    unsigned int f0 = getXLo(f);
+    f = apply2(f1, f0, OR);
+    idx = getIndex(f);
+  } // while
+
+  return f;
+} // BddImpl::reduce
+
+
+//      Function : BddImpl::supportCubeRec
+//      Abstract : Recursive function for finding function
+//      support as a cube.
+BDD
+BddImpl::supportCubeRec(const BDD f)
+{
+  BDD rtn = _nullNode;
+  if (isConstant(f) || nodeMarked(f, 1)) {
+    rtn = _oneNode;
+  } else {
+    markNode(f, 1);
+    BDD s1 = supportCube(getHi(f));
+    if (s1) {
+      BDD s0 = supportCube(getLo(f));
+      if (s0) {
+        rtn = apply(s1, s0, AND);
+        rtn = makeNode(getIndex(f), rtn, _zeroNode);
+      } // if s0
+    } // if s1
+  } // if terminal or not
+
+  return rtn;
+} // BddImpl::supportCubeRec
+
+
+//      Function : BddImpl::countNodes
+//      Abstract : Count the number of nodes rooted at this node. Uses
+//      mark 1 to record previousy visited nodes.
+unsigned int
+BddImpl::countNodes(const BDD f) const
+{
+  unsigned int count = 0;
+  if (nodeUnmarked(f, 1)) {
+    markNode(f, 1);
+    if (! isConstant(f)) {
+      count = (countNodes(getHi(f)) +
+               countNodes(getLo(f)) + 1);
+    } else {
+      count = 1;
+    } // if not constant
+  } // if unmarked
+
+  return count;
+} // BddImpl::countNodes
+
+//      Function : BddImpl::index
+//      Abstract : Get the index of this BDD.
+unsigned int
+BddImpl::index(const BDD f) const
+{
+  BddNode &n = getNode(f);
+  return n.getIndex();
+} // BddImpl::index
+
+
+//      Function : BddImpl::getAndCache
+//      Abstract : Retrieves an entry from the AND cache if it is there.
+BDD
+BddImpl::getAndCache(BDD f, BDD g)
+{
+  BDD rtn = _nullNode;
+  auto hash = hash2(f, g) & COMP_CACHE_MASK;
+  CacheData2 &c = _andTbl[hash];
+  if (c._f == f && c._g == g) {
+    rtn = c._r;
+  } // if
+
+  return rtn;
+} // BddImpl::getAndCache
+
+
+//      Function : BddImpl::insertAndCache
+//      Abstract : Inserts a result into the AND cache.
+void
+BddImpl::insertAndCache(BDD f, BDD g, BDD r)
+{
+  if (r) {
+    auto hash = hash2(f, g) & COMP_CACHE_MASK;
+    CacheData2 &c = _andTbl[hash];
+    c._f = f;
+    c._g = g;
+    c._r = r;
+  } // if
+} // BddImpl::insertAndCache
+
+
+//      Function : BddImpl::getXorCache
+//      Abstract : Retrieves an entry from the XOR cache if it is there.
+BDD
+BddImpl::getXorCache(BDD f, BDD g)
+{
+  BDD rtn = _nullNode;
+  auto hash = hash2(f, g) & COMP_CACHE_MASK;
+  CacheData2 &c = _xorTbl[hash];
+  if (c._f == f && c._g == g) {
+    rtn = c._r;
+  } // if
+
+  return rtn;
+} // BddImpl::getXorCache
+
+
+//      Function : BddImpl::insertXorCache
+//      Abstract : Inserts a result into the XOR cache.
+void
+BddImpl::insertXorCache(BDD f, BDD g, BDD r)
+{
+  if (r) {
+    auto hash = hash2(f, g) & COMP_CACHE_MASK;
+    CacheData2 &c = _xorTbl[hash];
+    c._f = f;
+    c._g = g;
+    c._r = r;
+  } // if
+} // BddImpl::insertXorCache
+
+
+//      Function : BddImpl::getIteCache
+//      Abstract : Looks in the computed cache to see if the
+//      ite(f,g,h) has been saved.
+BDD
+BddImpl::getIteCache(const BDD f,
+                     const BDD g,
+                     const BDD h)
+{
+  BDD rtn = _nullNode;
+  auto hash = hash3(f, g, h) & COMP_CACHE_MASK;
+  CacheData3 &c = _iteTbl[hash];
+  if (c._f == f && c._g == g && c._h == h) {
+    rtn = c._r;
+  } // if
+
+  return rtn;
+} // BddImpl::getIteCache
+
+
+//      Function : BddImpl::insertIteCache
+//      Abstract : Inserts r into the computed table as being the
+//      result of ite(f,g,h).
+void
+BddImpl::insertIteCache(const BDD f,
+                        const BDD g,
+                        const BDD h,
+                        const BDD r)
+{
+  if (r) {
+    auto hash = hash3(f, g, h) & COMP_CACHE_MASK;
+    CacheData3 &c = _iteTbl[hash];
+    c._f = f;
+    c._g = g;
+    c._h = h;
+    c._r = r;
+  } // if r
+} // BddImpl::insertIteCache
+
+
+//      Function : BddImpl::cleanCaches
+//      Abstract : Remove cache entries with unreferenced nodes. Used
+//      after garbage collection and reordering.
+void
+BddImpl::cleanCaches(const bool force)
+{
+  cleanAndCache(force);
+  cleanXorCache(force);
+  cleanIteCache(force);
+} // BddImpl::cleanCaches
+
+
+//      Function : BddImpl::cleanAndCache
+//      Abstract : Clean up the AND cache
+void
+BddImpl::cleanAndCache(bool force)
+{
+  for (auto &data : _andTbl) {
+    if (force ||
+        nodeUnmarked(data._f, 0) ||
+        nodeUnmarked(data._g, 0) ||
+        nodeUnmarked(data._r, 0)) {
+      data._f = _nullNode;
+      data._g = _nullNode;
+      data._r = _nullNode;
+    } // if
+  } // for
+} // BddImpl::cleanAndCache
+
+
+//      Function : BddImpl::cleanXorCache
+//      Abstract : Clean up the XOR cache
+void
+BddImpl::cleanXorCache(bool force)
+{
+  for (auto &data : _xorTbl) {
+    if (force ||
+        nodeUnmarked(data._f, 0) ||
+        nodeUnmarked(data._g, 0) ||
+        nodeUnmarked(data._r, 0)) {
+      data._f = _nullNode;
+      data._g = _nullNode;
+      data._r = _nullNode;
+    } // if
+  } // for
+} // BddImpl::cleanXorCache
+
+
+//      Function : BddImpl::cleanIteCache
+//      Abstract : Clean up the ITE cache.
+void
+BddImpl::cleanIteCache(bool force)
+{
+  for (auto &data : _iteTbl) {
+    if (force ||
+        nodeUnmarked(data._f, 0) ||
+        nodeUnmarked(data._g, 0) ||
+        nodeUnmarked(data._h, 0) ||
+        nodeUnmarked(data._r, 0)) {
+      data._f = _nullNode;
+      data._g = _nullNode;
+      data._h = _nullNode;
+      data._r = _nullNode;
+    } // if
+  } // for
+} // BddImpl::cleanIteCache
+

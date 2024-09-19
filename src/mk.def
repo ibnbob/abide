@@ -1,0 +1,6 @@
+CCSRCS 	= Bdd.cc BddUtils.cc BddImpl.cc BddImplMem.cc BddImplCalc.cc UniqTbls.cc 
+EXPORT	= Bdd.h BddUtils.h
+ESRC 	= main.cc
+EXE	= test_bdd
+LIB	= abide
+CFLAGSL = -Wall -Werror

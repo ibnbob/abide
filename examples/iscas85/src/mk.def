@@ -1,0 +1,8 @@
+CCSRCS 	= Ckt.cc Element.cc 
+EXPORT	= 
+ESRC 	= main.cc
+EXE	= iscas
+LIB	=
+LIBS    = libabide
+#LOPTS	= -l boost_program_options -pthread
+CFLAGSL = -Wall -Werror

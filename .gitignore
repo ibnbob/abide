@@ -1,0 +1,10 @@
+*.[oa]
+.obj-*
+.d
+test_bdd*
+*~
+lib/
+include/
+makefile
+*.out
+TAGS

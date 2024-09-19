@@ -1,0 +1,87 @@
+#! /usr/bin/bash
+
+function usage () {
+cat <<EOF
+usage: configure [ <options> ... ]
+
+where '<option>' is one of the following:
+
+-h              Print this command line option summary
+
+-r <ROOTDIR>    Specify a root directory. If this is specified, then the lib
+		and include directories will be relative to this directory.
+		Otherwis, it is relative to the current directory.
+
+-l <LIBDIR>	Specifiy install directory for library files. If this is an
+   		absolute path, it will be used without modification. Otherwise,
+		it will be relative to the ROOTDIR if given or the current
+		directory if not. The default is ./lib.
+
+-i<INCDIR>	Specifiy install directory for header files. If this is an
+		absolute path, it will be used without modification. Otherwise,
+		it will be relative to the ROOTDIR if given or the current
+		directory if not. The default is ./include.
+
+EOF
+}
+
+function abs_path() {
+    (cd $1; echo $(pwd))
+}
+
+ROOT=.
+LIBDIR=./lib
+HDRDIR=./include
+
+while getopts "hi:l:r:" opt; do
+    case $opt in
+	h) usage
+	   exit 0
+	   ;;
+	r) ROOT=${OPTARG}
+	   ;;
+	i) HDRDIR=${OPTARG}
+	   ;;
+	l) LIBDIR=${OPTARG}
+	   ;;
+	\?) usage
+	    exit 1
+    esac
+done
+
+#echo "ROOT   =" $ROOT
+#echo "LIBDIR =" $LIBDIR
+#echo "HDRDIR =" $HDRDIR
+
+ROOT=$(abs_path $ROOT)
+
+if [[ ${LIBDIR:0:1} != '/' ]]; then
+    LIBBASE=$(basename $LIBDIR)
+    LIBUPDIR=${ROOT}/${LIBDIR%${LIBBASE}}
+    if [ -z $LIBUPDIR ]; then
+	LIBUPDIR=.
+    fi
+    LIBUPDIR=$(abs_path ${LIBUPDIR})
+    LIBDIR=$LIBUPDIR/$LIBBASE
+fi
+
+if [[ ${HDRDIR:0:1} != '/' ]]; then
+    HDRBASE=$(basename $HDRDIR)
+    HDRUPDIR=${ROOT}/${HDRDIR%${HDRBASE}}
+    if [ -z $HDRUPDIR ]; then
+	HDRUPDIR=.
+    fi
+    HDRUPDIR=$(abs_path ${HDRUPDIR})
+    HDRDIR=$HDRUPDIR/$HDRBASE
+fi
+
+#echo "ROOT   =" $ROOT
+echo "LIBDIR =" $LIBDIR
+echo "HDRDIR =" $HDRDIR
+
+for m in $(find . -name 'mk.cfg'); do
+    BASE=$(basename $m)
+    DIR=${m%$BASE}
+    sed "s#@LIBDIR@#${LIBDIR}#" $m | \
+    sed "s#@HDRDIR@#${HDRDIR}#" > $DIR/makefile
+done

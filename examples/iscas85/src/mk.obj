@@ -1,0 +1,31 @@
+include ../mk.def
+OBJ = $(CCSRCS:.cc=.o)
+VPATH = .. 
+
+DEPDIR := ../.d
+$(shell mkdir -p $(DEPDIR) >/dev/null)
+DEPFLAGS = -MT $@ -MMD -MP -MF $(DEPDIR)/$*.Td
+
+CXX = /usr/bin/g++ -std=c++17 ${CFLAGS}
+CCOMPILE = $(CXX) -I.. $(DEPFLAGS) $(CXXFLAGS) -c
+
+POSTCOMPILE = @if ! diff $(DEPDIR)/$*.Td $(DEPDIR)/$*.d; then mv -f $(DEPDIR)/$*.Td $(DEPDIR)/$*.d && touch $@; else rm -f $(DEPDIR)/$*.Td; fi
+AR	= /usr/bin/ar -rc
+
+.PHONY: exec
+
+exec: $(EXE)
+
+$(EXE): $(OBJ) $(ESRC:.cc=.o) ${LLIBS}
+	$(CXX) $^ -o $@ ${LLIBS}
+	mv $@ ..
+
+%.o : %.cc
+%.o : %.cc $(DEPDIR)/%.d
+	$(CCOMPILE) $(OUTPUT_OPTION) $<
+	$(POSTCOMPILE)
+
+$(DEPDIR)/%.d: ;
+.PRECIOUS: $(DEPDIR)/%.d
+
+include $(wildcard $(patsubst %,$(DEPDIR)/%.d,$(basename $(CCSRCS) $(ESRC))))
