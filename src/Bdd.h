@@ -27,7 +27,6 @@ using BDD = uint32_t;
 using BDDVec = std::vector<BDD>;
 
 enum BddOp {
-  NOT,
   AND,
   NAND,
   OR,
@@ -90,6 +89,10 @@ private:
   Bdd compose(BDD f, BddVar x, BDD g) const;
   bool covers(BDD f, BDD g) const;
   Bdd cubeFactor(BDD f) const;
+
+  Bdd getIf(BDD f) const;
+  Bdd getThen(BDD f) const;
+  Bdd getElse(BDD f) const;
 
   BddVar getTopVar(BDD f) const;
   BddIndex getIndex(BDD f) const;
@@ -178,6 +181,9 @@ public:
   Bdd supportCube() const;
 
   // Data access.
+  Bdd getIf() const;
+  Bdd getThen() const;
+  Bdd getElse() const;
   BddVar getTopVar() const;
   BddIndex getIndex() const;
   unsigned int getId() const;
@@ -454,6 +460,24 @@ inline Bdd Bdd::supportCube() const {
 } // Bdd::supportCube
 
 // Data access.
+
+inline Bdd Bdd::getIf() const{
+  assert(_mgr);
+
+  return _mgr->getIf(_me);
+} // Bdd::getIf
+
+inline Bdd Bdd::getThen() const{
+  assert(_mgr);
+
+  return _mgr->getThen(_me);
+} // Bdd::getThen
+
+inline Bdd Bdd::getElse() const{
+  assert(_mgr);
+
+  return _mgr->getElse(_me);
+} // Bdd::getElse
 
 inline BddVar Bdd::getTopVar() const {
   assert(_mgr);

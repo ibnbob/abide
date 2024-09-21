@@ -280,6 +280,35 @@ BddMgr::cubeFactor(const BDD f) const
 } // BddMgr::cubeFactor
 
 
+//      Function : BddMgr::getIf
+//      Abstract : Returns the a BDD for the top variable.
+Bdd
+BddMgr::getIf(BDD f) const
+{
+  return getLit(getTopVar(f));
+} // BddMgr::getIf
+
+
+//      Function : BddMgr::getThen
+//      Abstract : Returns the a BDD for positive cofactor w.r.t. the
+//      top variable.
+Bdd
+BddMgr::getThen(BDD f) const
+{
+  return Bdd(_impl->getThen(f), this);
+} // BddMgr::getThen
+
+
+//      Function : BddMgr::getElse
+//      Abstract : Returns the a BDD for positive cofactor w.r.t. the
+//      top variable.
+Bdd
+BddMgr::getElse(BDD f) const
+{
+  return Bdd(_impl->getElse(f), this);
+} // BddMgr::getElse
+
+
 //      Function : BddMgr::getTopVar
 //      Abstract : Get the top variable of this BDD.
 BddVar

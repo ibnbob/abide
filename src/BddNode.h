@@ -64,9 +64,9 @@ private:
   BDD _hi;
   BDD _lo;
   BDD _next;
-  unsigned int _index;
-  unsigned int _xrefs:24;
-  unsigned int _marks:8;
+  BddIndex _index;
+  uint32_t _xrefs:24;
+  uint32_t _marks:8;
 }; // BddNode
 
 #endif // BDDNODE_H

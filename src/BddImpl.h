@@ -76,6 +76,9 @@ public:
   bool isConstant(BDD f) const { return isOne(f) || isZero(f); };
   bool notConstant(BDD f) const { return ! isConstant(f); };
 
+  BDD getThen(BDD f) const { return getXHi(f); };
+  BDD getElse(BDD f) const { return getXLo(f); };
+
   BddVar getTopVar(BDD f) const { return getBddVar(f); };
   BddIndex getIndex(BDD f) const {
     BddNode &n = getNode(f);

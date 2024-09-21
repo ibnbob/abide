@@ -29,9 +29,6 @@ BddImpl::apply2(BDD f, BDD g, BddOp op)
 {
   BDD r = _nullNode;
   switch (op) {
-    case NOT:
-      r = invert(f);
-      break;
     case AND:
       r = and2(f, g);
       break;
