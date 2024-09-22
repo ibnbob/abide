@@ -52,7 +52,8 @@ To build and export the optimized library and headers type
 cd src
 make export
 ```
-
+The make files current are hard-coded to use g++ with C++-17. Also, the make files look for g++, ar and install 
+in the /usr/bin directory.
 ## Usage
 To use abide in your C++ code, include the exported main header and optionally the utility header
 ```
