@@ -54,7 +54,7 @@ make export
 ```
 
 ## Usage
-To use abide in your C++ include the exported main header and optionally the utility header
+To use abide in your C++ code, include the exported main header and optionally the utility header
 ```
 #include "Bdd.h"
 #include "BddUtils.h" // Optional utility functions.
