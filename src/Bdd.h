@@ -13,8 +13,6 @@
 #include <unordered_set>
 #include <vector>
 
-using namespace std;
-
 //
 // Forward class declarations.
 //
@@ -39,10 +37,10 @@ enum BddOp {
 using BddVar = uint32_t;
 using BddLit = int32_t;
 using BddIndex = uint32_t;
-using BddVarVec = vector<BddVar>;
-using BddPtr = shared_ptr<Bdd>;
-using BddSet = unordered_set<BddPtr>;
-using BddVec = vector<BddPtr>;
+using BddVarVec = std::vector<BddVar>;
+using BddPtr = std::shared_ptr<Bdd>;
+using BddSet = std::unordered_set<BddPtr>;
+using BddVec = std:: vector<BddPtr>;
 
 //      Class    : BddMgr
 //      Abstract : Manager for BDD memory and operations.
@@ -115,7 +113,7 @@ private:
   void print(BDD f) const;
 
   // Class Data
-  unique_ptr<BddImpl> _impl;
+  std::unique_ptr<BddImpl> _impl;
 }; // BddMgr
 
 

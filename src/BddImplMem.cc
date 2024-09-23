@@ -49,9 +49,9 @@ BddImpl::gc(bool force, bool verbose)
     // assert(_nodesFree == countFreeNodes());
 
     if (verbose) {
-      cout << "Garbage Collection #" << numGCs << ": "
+      std::cout << "Garbage Collection #" << numGCs << ": "
            << _nodesAllocd << " : " << nodesFreed
-           << endl;
+           << std::endl;
     } // if
   } // if unlocked for gc
 

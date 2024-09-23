@@ -125,7 +125,7 @@ BddImpl::print(BDD f) const
 {
   printRec(f, 0);
   unmarkNodes(f, 1);
-  cout << endl;
+  std::cout << std::endl;
 } // BddImpl::print
 
 
@@ -135,28 +135,28 @@ BddImpl::print(BDD f) const
 void
 BddImpl::printRec(const BDD f, const unsigned int level) const
 {
-  cout << string(2*level, ' ');
+  std::cout << std::string(2*level, ' ');
   if (isZero(f)) {
-    cout << "[0]" << endl;
+    std::cout << "[0]" << std::endl;
   } else if (isOne(f)) {
-    cout << "[1]" << endl;
+    std::cout << "[1]" << std::endl;
   } else {
     unsigned int addr = f >> 1;
     if (nodeMarked(f, 1)) {
-      cout << "["
+      std::cout << "["
            << (isNegPhase(f) ? "~" : "")
            << addr
            << "]"
-           << endl;
+           << std::endl;
     } else {
       markNode(f, 1);
-      cout << (isNegPhase(f) ? "~" : "");
-      cout.width(4);
-      cout.fill('0');
-      cout << addr;
-      cout.fill(' ');
-      cout << ":" << getIndex(f)
-           << endl;
+      std::cout << (isNegPhase(f) ? "~" : "");
+      std::cout.width(4);
+      std::cout.fill('0');
+      std::cout << addr;
+      std::cout.fill(' ');
+      std::cout << ":" << getIndex(f)
+           << std::endl;
 
       printRec(getHi(f), level+1);
       printRec(getLo(f), level+1);
