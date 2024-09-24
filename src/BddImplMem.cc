@@ -129,14 +129,17 @@ BddImpl::allocateNode()
       if (nuBank) {
         _banks.push_back(nuBank);
         _freeList = bdx << (BDD_VEC_LG_SZ + 1);
+
         for (unsigned int idx = 1; idx < BDD_VEC_SZ; ++idx) {
           BddNode &node(nuBank[idx-1]);
           node.setNext(_freeList + 2*idx);
         } // for
 
+        nuBank[BDD_VEC_SZ-1].setNext(0);
+
         _nodesFree = BDD_VEC_SZ;
         _curNodes += BDD_VEC_SZ;
-        // assert(_nodesFree > 100000000 || _nodesFree == countFreeNodes());
+        // assert(_nodesFree == countFreeNodes() || _nodesAllocd == 0);
       } // if allocated new bank of nodes
     } // if less than max
 #else
@@ -174,7 +177,7 @@ BddImpl::allocateNode()
   } // if nodes free
 
   assert(_nodesAllocd + _nodesFree == _curNodes);
-  // assert(_nodesFree > 100000000 || _nodesFree == countFreeNodes());
+  // assert(_nodesFree == countFreeNodes());
 
   return rtn;
 } // BddImpl::allocateNode
@@ -191,6 +194,7 @@ BddImpl::freeNode(const BDD f)
   _freeList = f;
   --_nodesAllocd;
   ++_nodesFree;
+  // assert(_nodesFree == countFreeNodes());
 } // BddImpl::freeNode
 
 
@@ -630,6 +634,7 @@ BddImpl::checkMem() const
   std::printf("\tmax allocated = %ld\n", _maxAllocd);
   std::printf("\tnodes allocated = %ld\n", _nodesAllocd);
   std::printf("\tnodes free = %ld\n", _nodesFree);
+  std::printf("\tnodes in free list = %d\n", countFreeNodes());
   std::printf("\tnodes in mem = %ld\n", _curNodes);
 
   return ((_nodesFree + _nodesAllocd) == _curNodes);
