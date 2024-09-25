@@ -236,8 +236,8 @@ testXor()
   cout << "H2 = findXor(F)" << endl;
   cout << "G2 = F ^ H2" << endl;
 
-  VALIDATE(F != G2);
-  VALIDATE(F != H2);
+  VALIDATE(F.supportCube() <= G2.supportCube());
+  VALIDATE(F.supportCube() <= H2.supportCube());
 
   F = a * b * c + d * e * f;
   H = findXor(F);
