@@ -53,6 +53,7 @@ public:
   bool covers(BDD f, BDD g);
   BDD cubeFactor(BDD f);
   BDD supportCube(BDD f);
+  BDD oneCube(BDD f);
 
   BddVarVec supportVec(BDD f);
 

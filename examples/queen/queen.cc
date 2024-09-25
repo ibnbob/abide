@@ -28,9 +28,16 @@ private:
   Bdd addDiagonalConstraints(const int row, const int col);
   void printResults();
 
-  BddLit toVarIndex(const int row, const int col) const {
+  BddLit positionToVar(const int row, const int col) const {
     return row * _numQs + col + 1;
-  } // toVarIndex
+  } // positionToVar
+
+  std::pair<int, int> varToPosition(BddVar x) {
+    int row = x-1;
+    int col = row % _numQs;
+    row -= col; row /= _numQs;
+    return {row, col};
+  } // varToPosition
 
   int _numQs;
   BddMgr _mgr;
@@ -84,7 +91,7 @@ QueensSolver::buildVariables()
 
   for (int row = 0; row < _numQs; ++row) {
     for (int col = 0; col < _numQs; ++col) {
-      _vars[row][col] = _mgr.getLit(toVarIndex(row, col));
+      _vars[row][col] = _mgr.getLit(positionToVar(row, col));
     } // col
   } // for
 } // QueensSolver::buildVariables
@@ -231,4 +238,36 @@ void
 QueensSolver::printResults()
 {
   cout << _numQs <<"-Queens is " << (_queens.isZero() ? "UNSAT" : "SAT") << endl;
+
+  std::vector< std::vector<int> > grid;
+  grid.resize(_numQs);
+  for (auto &row : grid) {
+    row.resize(_numQs, 0);
+  } // for
+
+  Bdd cube = _queens.oneCube();
+  while (!cube.isOne()) {
+    Bdd hi = cube.getThen();
+    Bdd lo = cube.getElse();
+    assert(hi.isZero() || lo.isZero());
+    if (lo.isZero()) {
+      BddVar var = cube.getTopVar();
+      auto [row, col] = varToPosition(var);
+      grid[row][col] = 1;
+      cube = hi;
+    } else {
+      cube = lo;
+    } // if
+  } // while
+
+  for (auto &row : grid) {
+    for (auto &val : row) {
+      if (val == 1) {
+        cout << "* ";
+      } else {
+        cout << ". ";
+      } // if
+    } // for
+    cout << endl;
+  } // for
 } // QueensSolver::printResults

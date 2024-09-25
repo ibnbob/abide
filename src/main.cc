@@ -153,6 +153,12 @@ testOps()
   cout << "G = d*e" << endl;
   VALIDATE(F.compose(c.getTopVar(), G) == a*d*e + b*(~d + ~e));
 
+  F = (~a + ~b) * (c + d);
+  G = F.oneCube();
+  cout << "F = (~a + ~b) * (c + d)" << endl;
+  cout << "G = F.oneCube()" << endl;
+  VALIDATE(G == a*~b*c);
+
   cout << endl;
 } // testOps
 

@@ -96,8 +96,9 @@ private:
   BddIndex getIndex(BDD f) const;
   BddVarVec supportVec(BDD f) const;
   Bdd supportCube(BDD f) const;
-  unsigned int countNodes(BDD f) const;
+  Bdd oneCube(BDD f ) const;
 
+  unsigned int countNodes(BDD f) const;
   unsigned int countNodes(const BddVec &bdds) const;
   unsigned int countNodes(const BddSet &bdds) const;
   unsigned int countNodes(const BddFnSet &bdds) const;
@@ -177,6 +178,7 @@ public:
   Bdd cubeFactor() const;
   BddVarVec supportVec() const;
   Bdd supportCube() const;
+  Bdd oneCube() const;
 
   // Data access.
   Bdd getIf() const;
@@ -456,6 +458,12 @@ inline Bdd Bdd::supportCube() const {
 
   return _mgr->supportCube(_me);
 } // Bdd::supportCube
+
+inline Bdd Bdd::oneCube() const {
+  assert(_mgr);
+
+  return _mgr->oneCube(_me);
+} // Bdd::oneCube
 
 // Data access.
 

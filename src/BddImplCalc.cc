@@ -164,6 +164,29 @@ BddImpl::supportCube(BDD f)
 } // BddImpl::supportCube
 
 
+//      Function : BddImpl::oneCube
+//      Abstract : Return a satisfying cube if one exists. zero otherwise.
+BDD
+BddImpl::oneCube(BDD f)
+{
+  BDD rtn = _nullNode;
+  if (isConstant(f)) {
+    return f;
+  } else {
+    BddVar x = getBddVar(f);
+    BDD hi = oneCube(getXHi(f));
+    if (isZero(hi)) {
+      BDD lo = oneCube(getXLo(f));
+      rtn = makeNode(x, _zeroNode, lo);
+    } else {
+      rtn = makeNode(x, hi, _zeroNode);
+    } // if
+  } // if
+
+  return rtn;
+} // BddImpl::oneCube
+
+
 //      Function : BddImpl::and2
 //      Abstract : Computes f*g.
 BDD

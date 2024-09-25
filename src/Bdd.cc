@@ -345,6 +345,15 @@ BddMgr::supportCube(const BDD f) const
 } // BddMgr::supportCube
 
 
+//      Function : BddMgr::oneCube
+//      Abstract : Return a satisfying cube if one exists. zero otherwise.
+Bdd
+BddMgr::oneCube(const BDD f ) const
+{
+  return Bdd(_impl->oneCube(f), this);
+} // BddMgr::oneCube
+
+
 //      Function : BddMgr::countNodes
 //      Abstract : Count the number of nodes in the BDD rooted here.
 unsigned int

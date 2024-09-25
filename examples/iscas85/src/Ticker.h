@@ -18,7 +18,7 @@ public:
     _ticks(0),
     _tocks(0)
   {
-    cout << '|' << std::flush;
+    std::cout << '|' << std::flush;
   }; // CTOR
   ~Ticker(){
     tick(_total-_ticks);
@@ -39,11 +39,11 @@ public:
       while (_tocks < nextTock) {
 	++_tocks;
 	if (_tocks % 5) {
-	  cout << '-' << std::flush;
+	  std::cout << '-' << std::flush;
 	} else if (_tocks < 50) {
-	  cout << _tocks / 5 << std::flush;
+	  std::cout << _tocks / 5 << std::flush;
 	} else {
-	  cout << '|' << endl;
+	  std::cout << '|' << std::endl;
 	} // if done
       } // while
     } // while
