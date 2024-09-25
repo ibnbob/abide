@@ -18,8 +18,8 @@ fi
 exec 1>&2
 
 # Check coade complexity eith lizard.
-if which lizard.py>/dev/null; then
-    if lizard.py -w --CCN 10 $(git diff --cached --name-only $against | egrep '\.cc|\.h'); then
+if which lizard>/dev/null; then
+    if lizard -w  -m --sort cyclomatic_complexity --CCN 10 --arguments 9 --length 100 -T nloc=100 $(git diff --cached --name-only $against | egrep '\.cc|\.h'); then
 	exit 0
     else
 	exit 1
