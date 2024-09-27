@@ -244,28 +244,17 @@ std::vector<int>
 Sudoku::parseLine(std::string &line)
 {
   std::vector<int> entries;
-  int val = 0;
-  for (unsigned char c : line) {
-    if (std::isspace(c)) {
-      if (val > 0) {
+  if (line[0] != '#') {
+    for (unsigned char c : line) {
+      if (std::isspace(c)) {
+      } else if (c == '.' ||
+                 c == '0') {
+        entries.push_back(0);
+      } else if (std::isdigit(c)) {
+        int val = c - '0';
         entries.push_back(val);
-        val = 0;
       } // if
-    } else if (c == '.' ||
-               c == '0') {
-      if (val > 0) {
-        entries.push_back(val);
-        val = 0;
-      } // if
-      entries.push_back(0);
-    } else if (std::isdigit(c)) {
-      val += c - '0';
-    } // if
-  } // for
-
-  if (val > 0) {
-    entries.push_back(val);
-    val = 0;
+    } // for
   } // if
 
   return entries;
