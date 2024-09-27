@@ -6,22 +6,25 @@
 #include "Bdd.h"
 #include "BddUtils.h"
 
+#include <fstream>
+
 using std::cin;
 using std::cout;
+using std::cerr;
 using std::endl;
 
 //      Class    : Sudoku
 //      Abstract : Class for solving Sudoku puzzles.
 class Sudoku {
 public:
-  Sudoku(int N); // CTOR
+  Sudoku(std::string filename); // CTOR
   ~Sudoku() = default; // DTOR
 
   Sudoku(const Sudoku &) = delete; // Copy CTOR
   Sudoku &operator=(const Sudoku &) = delete; // Copy assignment
   Sudoku(Sudoku &&) = delete; // Move CTOR
   Sudoku &operator=(Sudoku &&) = delete; // Move assignment
-  void addPuzzleConstraints();
+  void readPuzzleConstraints();
   void buildGeneralConstraints();
   void printSolution();
 
@@ -35,7 +38,8 @@ public:
   void buildBoxConstraint(int val, int i, int j);
   void buildCellConstraints();
 
-  void addLine(int row);
+  void readPuzzleConstraints(std::istream &strm);
+  void addLine(std::istream &strm, int row);
   std::vector<int> parseLine(std::string &line);
   bool addEntry(int row, int col, int val);
 
@@ -46,24 +50,22 @@ public:
   Entry unpackEntry(int e);
   Cell unpackCell(int c);
 
-  int _N;
-  int _M;
+  // Data members.
+  int _N = 9;
+  int _M = 3;
+  std::string _input;
+
   BddMgr _mgr;
   Bdd _solution;
 }; // Sudoku
 
 
 //      Function : Sudoku::Sudoku
-//      Abstract : CTOR
-Sudoku::Sudoku(int N) :
-  _N(N)
+//      Abstract : CTOR with input file.
+Sudoku::Sudoku(std::string filename)
 {
-  _M = 2;
-  while (_M*_M < _N) {
-    ++_M;
-  } // while
-  assert(_N == _M *_M);
   _solution = _mgr.getOne();
+  _input = filename;
 } // Sudoku::Sudoku
 
 
@@ -182,26 +184,47 @@ Sudoku::buildCellConstraints()
 } // Sudoku::buildCellConstraints
 
 
-//      Function : Sudoku::addPuzzleConstraints
-//      Abstract : Add constraints for a puzzle.
+//      Function : Sudoku::readPuzzleConstraints
+//      Abstract : Read the puzzle constraints either from a file or
+//      stdin.
 void
-Sudoku::addPuzzleConstraints()
+Sudoku::readPuzzleConstraints()
+{
+  if (_input.empty()) {
+    readPuzzleConstraints(std::cin);
+  } else {
+    std::ifstream ifile;
+    ifile.open(_input);
+    if (ifile) {
+      readPuzzleConstraints(ifile);
+    } else {
+      cerr << "Could not open file: "
+           << _input << endl;
+    } // if
+  } // if
+} // Sudoku::readPuzzleConstraints
+
+
+//      Function : Sudoku::readPuzzleConstraints
+//      Abstract : Read constraints for a puzzle from stdin.
+void
+Sudoku::readPuzzleConstraints(std::istream &strm)
 {
   for (int row = 0; row < _N; ++row) {
-    addLine(row);
+    addLine(strm, row);
   } //
-} // Sudoku::addPuzzleConstraints
+} // Sudoku::readPuzzleConstraints
 
 
 //      Function : Sudoku::addLine
 //      Abstract : Read and add a line of constraints.
 void
-Sudoku::addLine(int row)
+Sudoku::addLine(std::istream &strm, int row)
 {
   std::string line;
   std::vector<int> entries;
   do {
-    std::getline(cin, line);
+    std::getline(strm, line);
     entries = parseLine(line);
   } while (entries.size() != _N);
 
@@ -362,12 +385,12 @@ Sudoku::printSolution()
 int
 main(int argc, char *argv[])
 {
-  int n = 9;
+  std::string input;
   if (argc == 2) {
-    n = std::stoi(argv[1]);
+    input = argv[1];
   } // if
-  Sudoku sudoku(n);
-  sudoku.addPuzzleConstraints();
+  Sudoku sudoku(input);
+  sudoku.readPuzzleConstraints();
   sudoku.buildGeneralConstraints();
   sudoku.printSolution();
 
