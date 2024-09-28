@@ -131,7 +131,7 @@ Of special note is the restriction operator `/` which performs the
  of Coudert _et al._[^CBM]. If the second operand is a product of
  literals, this is the same as the Shannon cofactor.
 
-``
+```
 f = a *b + ~a * c;
 assert(f/c == ~a + b);
 ```
