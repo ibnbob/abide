@@ -59,6 +59,15 @@ public:
   Bdd getLit(BddLit) const;
   Bdd getIthLit(BddIndex) const;
 
+  unsigned int countNodes(BDD f) const;
+  unsigned int countNodes(const BddVec &bdds) const;
+  unsigned int countNodes(const BddSet &bdds) const;
+  unsigned int countNodes(const BddFnSet &bdds) const;
+
+  Bdd supportCube(const BddVec &bdds) const;
+  Bdd supportCube(const BddSet &bdds) const;
+  Bdd supportCube(const BddFnSet &bdds) const;
+
   BddVarVec supportVec(const BddSet &bdds) const;
   BddVarVec supportVec(const BddFnSet &bdds) const;
 
@@ -97,15 +106,6 @@ private:
   BddVarVec supportVec(BDD f) const;
   Bdd supportCube(BDD f) const;
   Bdd oneCube(BDD f ) const;
-
-  unsigned int countNodes(BDD f) const;
-  unsigned int countNodes(const BddVec &bdds) const;
-  unsigned int countNodes(const BddSet &bdds) const;
-  unsigned int countNodes(const BddFnSet &bdds) const;
-
-  Bdd supportCube(const BddVec &bdds) const;
-  Bdd supportCube(const BddSet &bdds) const;
-  Bdd supportCube(const BddFnSet &bdds) const;
 
   void incRef(BDD f) const;
   void decRef(BDD f) const;

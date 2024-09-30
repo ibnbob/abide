@@ -237,37 +237,41 @@ main(int argc, char *argv[])
 void
 QueensSolver::printResults()
 {
-  cout << _numQs <<"-Queens is " << (_queens.isZero() ? "UNSAT" : "SAT") << endl;
-
-  std::vector< std::vector<int> > grid;
-  grid.resize(_numQs);
-  for (auto &row : grid) {
-    row.resize(_numQs, 0);
-  } // for
-
-  Bdd cube = _queens.oneCube();
-  while (!cube.isOne()) {
-    Bdd hi = cube.getThen();
-    Bdd lo = cube.getElse();
-    assert(hi.isZero() || lo.isZero());
-    if (lo.isZero()) {
-      BddVar var = cube.getTopVar();
-      auto [row, col] = varToPosition(var);
-      grid[row][col] = 1;
-      cube = hi;
-    } else {
-      cube = lo;
-    } // if
-  } // while
-
-  for (auto &row : grid) {
-    for (auto &val : row) {
-      if (val == 1) {
-        cout << "* ";
-      } else {
-        cout << ". ";
-      } // if
+  cout << endl;
+  if (_queens.isZero()) {
+    cout << _numQs <<"-Queens is UNSAT"  << endl;
+  } else {
+    cout << _numQs <<"-Queens is SAT"  << endl << endl;
+    std::vector< std::vector<int> > grid;
+    grid.resize(_numQs);
+    for (auto &row : grid) {
+      row.resize(_numQs, 0);
     } // for
-    cout << endl;
-  } // for
+
+    Bdd cube = _queens.oneCube();
+    while (!cube.isOne()) {
+      Bdd hi = cube.getThen();
+      Bdd lo = cube.getElse();
+      assert(hi.isZero() || lo.isZero());
+      if (lo.isZero()) {
+        BddVar var = cube.getTopVar();
+        auto [row, col] = varToPosition(var);
+        grid[row][col] = 1;
+        cube = hi;
+      } else {
+        cube = lo;
+      } // if
+    } // while
+
+    for (auto &row : grid) {
+      for (auto &val : row) {
+        if (val == 1) {
+          cout << "* ";
+        } else {
+          cout << ". ";
+        } // if
+      } // for
+      cout << endl;
+    } // for
+  } // if
 } // QueensSolver::printResults
