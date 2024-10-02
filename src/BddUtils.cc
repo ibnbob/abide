@@ -99,23 +99,26 @@ findProduct(const Bdd &f)
   assert(f.valid());
 
   Bdd rtn;
-  const BddMgr *mgr = f.getMgr();
-  BddVarVec vars = f.supportVec();
-  BddFnSet H;
-  H.insert(f);
 
-  // Ensures at least one variable is in a separate partition.
-  vars.pop_back();
-  for (auto var : vars) {
-    Bdd lit = mgr->getLit(var);
-    H = H.eliminate(lit);
-    Bdd result = findProduct(H);
-    if (result.valid()) {
+  if (!f.isConstant()) {
+    const BddMgr *mgr = f.getMgr();
+    BddVarVec vars = f.supportVec();
+    BddFnSet H;
+    H.insert(f);
+
+    // Ensures at least one variable is in a separate partition.
+    vars.pop_back();
+    for (auto var : vars) {
+      Bdd lit = mgr->getLit(var);
+      H = H.eliminate(lit);
+      Bdd result = findProduct(H);
+      if (result.valid()) {
         rtn = result;
-    } else if (!rtn.valid()) {
-      break;
-    } // if
-  } // for
+      } else if (!rtn.valid()) {
+        break;
+      } // if
+    } // for
+  } // if
 
   return rtn.valid() ? rtn : f.getMgr()->getOne();;
 } // findProduct
