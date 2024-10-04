@@ -62,7 +62,8 @@ public:
 
 //      Function : Sudoku::Sudoku
 //      Abstract : CTOR with input file.
-Sudoku::Sudoku(std::string filename)
+Sudoku::Sudoku(std::string filename) :
+  _mgr(_N*_N*_N, 1<<19)
 {
   _solution = _mgr.getOne();
   _input = filename;

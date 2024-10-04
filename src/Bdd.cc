@@ -13,10 +13,17 @@
 
 //      Function : BddMgr::BddMgr
 //      Abstract : Constructor.
-BddMgr::BddMgr()
+BddMgr::BddMgr() : BddMgr(DFLT_VAR_SZ, DFLT_CACHE_SZ)
 {
-  _impl = std::make_unique<BddImpl>();
-} // bddStart
+} // BddMgr::BddMgr
+
+
+//      Function : BddMgr::BddMgr
+//      Abstract : Constructor.
+BddMgr::BddMgr(int numVars, int cacheSz)
+{
+  _impl = std::make_unique<BddImpl>(numVars, cacheSz);
+} // BddMgr::BddMgr
 
 
 //      Function : BddMgr::~BddMgr

@@ -117,19 +117,29 @@ BddImpl::covers(BDD f, BDD g)
 BDD
 BddImpl::cubeFactor(BDD f)
 {
-  BddVarVec supp(supportVec(f));
-  BDD rtn = _oneNode;
-  std::reverse(supp.begin(), supp.end());
-  for (const auto vdx : supp) {
-    BDD lit = getLit(vdx);
-    if (covers(lit, f)) {
-      BDD tmp = apply2(rtn, lit, AND);
-      rtn = tmp;
-    } else if (covers(invert(lit), f)) {
-      BDD tmp = apply2(rtn, invert(lit), AND);
-      rtn = tmp;
-    } // if a cofactor is zero
-  } //for each variable in support.
+  if (isConstant(f)) {
+    return f;
+  } // if
+
+  BDD rtn = getCubeCache(f);
+  if (!rtn) {
+    _cacheStats.incCompMiss();
+    BddIndex x = getIndex(f);
+    BDD f0 = getXLo(f);
+    BDD f1 = getXHi(f);
+    BDD c1 = cubeFactor(f1);
+    BDD c0 = cubeFactor(f0);
+    if (isZero(f0)) {
+      rtn = makeNode(x, c1, _zeroNode);
+    } else if (isZero(f1)) {
+      rtn = makeNode(x, _zeroNode, c0);
+    } else {
+      rtn = apply2(c1, c0, OR);
+    } // if
+    insertCubeCache(f, rtn);
+  } else {
+    _cacheStats.incCompHit();
+  } // if
 
   return rtn;
 } // BddImpl::cubeFactor
@@ -459,7 +469,14 @@ BDD
 BddImpl::restrictRec(BDD f, BDD c)
 {
   BDD rtn = restrictTerminal(f, c);
+
+  if (rtn) {
+    return rtn;
+  } // if
+
+  rtn = getRestrictCache(f, c);
   if (! rtn) {
+    _cacheStats.incCompMiss();
     unsigned int fdx = getIndex(f);
     c = reduce(c, fdx);
     BDD c1 = restrict1(c, fdx);
@@ -474,12 +491,10 @@ BddImpl::restrictRec(BDD f, BDD c)
       BDD r0 = restrict(getXLo(f), c);
       rtn = makeNode(fdx, r1, r0);
     } // if cube literal
-  } //if early termination
-
-  //if (rtn) {
-  //  auto bddPair = make_pair(f, c);
-  //  _restrictTbl[bddPair] = rtn;
-  //} // if
+    insertRestrictCache(f, c, rtn);
+  } else {
+    _cacheStats.incCompHit();
+  } //if
 
   return rtn;
 } // BddImpl::restrictRec
@@ -582,7 +597,7 @@ BDD
 BddImpl::getAndCache(BDD f, BDD g)
 {
   BDD rtn = _nullNode;
-  auto hash = hash2(f, g) & COMP_CACHE_MASK;
+  auto hash = hash2(f, g) & _compCacheMask;
   CacheData2 &c = _andTbl[hash];
   if (c._f == f && c._g == g) {
     rtn = c._r;
@@ -598,7 +613,7 @@ void
 BddImpl::insertAndCache(BDD f, BDD g, BDD r)
 {
   if (r) {
-    auto hash = hash2(f, g) & COMP_CACHE_MASK;
+    auto hash = hash2(f, g) & _compCacheMask;
     CacheData2 &c = _andTbl[hash];
     c._f = f;
     c._g = g;
@@ -613,7 +628,7 @@ BDD
 BddImpl::getXorCache(BDD f, BDD g)
 {
   BDD rtn = _nullNode;
-  auto hash = hash2(f, g) & COMP_CACHE_MASK;
+  auto hash = hash2(f, g) & _compCacheMask;
   CacheData2 &c = _xorTbl[hash];
   if (c._f == f && c._g == g) {
     rtn = c._r;
@@ -629,13 +644,72 @@ void
 BddImpl::insertXorCache(BDD f, BDD g, BDD r)
 {
   if (r) {
-    auto hash = hash2(f, g) & COMP_CACHE_MASK;
+    auto hash = hash2(f, g) & _compCacheMask;
     CacheData2 &c = _xorTbl[hash];
     c._f = f;
     c._g = g;
     c._r = r;
   } // if
 } // BddImpl::insertXorCache
+
+
+//      Function : BddImpl::getRestrictCache
+//      Abstract : Retrieves an entry from the restrict cache if it is
+//      there.
+BDD
+BddImpl::getRestrictCache(BDD f, BDD g)
+{
+  BDD rtn = _nullNode;
+  auto hash = hash2(f, g) & _compCacheMask;
+  CacheData2 &c = _restrictTbl[hash];
+  if (c._f == f && c._g == g) {
+    rtn = c._r;
+  } // if
+
+  return rtn;
+} // BddImpl::getRestrictCache
+
+
+//      Function : BddImpl::insertRestrictCache
+//      Abstract : Inserts a result into the restrict cache.
+void
+BddImpl::insertRestrictCache(BDD f, BDD g, BDD r)
+{
+  if (r) {
+    auto hash = hash2(f, g) & _compCacheMask;
+    CacheData2 &c = _restrictTbl[hash];
+    c._f = f;
+    c._g = g;
+    c._r = r;
+  } // if
+} // BddImpl::insertRestrictCache
+
+
+//      Function : BddImpl::getCubeCache
+//      Abstract : Retrieves an entry from the cube cache if it is
+//      there.
+BDD
+BddImpl::getCubeCache(BDD f)
+{
+  if (auto entry = _cubeTbl.find(f);
+      entry != _cubeTbl.end()) {
+    return entry->second;
+  } // if
+
+  return _nullNode;
+} // BddImpl::getCubeCache
+
+
+//      Function : BddImpl::insertCubeCache
+//      Abstract : Inserts a result into the cube cache.
+void
+BddImpl::insertCubeCache(BDD f, BDD r)
+{
+  assert(r);
+  if (r) {
+    _cubeTbl[f] = r;
+  } // if
+} // BddImpl::insertCubeCache
 
 
 //      Function : BddImpl::getIteCache
@@ -647,7 +721,7 @@ BddImpl::getIteCache(const BDD f,
                      const BDD h)
 {
   BDD rtn = _nullNode;
-  auto hash = hash3(f, g, h) & COMP_CACHE_MASK;
+  auto hash = hash3(f, g, h) & _compCacheMask;
   CacheData3 &c = _iteTbl[hash];
   if (c._f == f && c._g == g && c._h == h) {
     rtn = c._r;
@@ -667,7 +741,7 @@ BddImpl::insertIteCache(const BDD f,
                         const BDD r)
 {
   if (r) {
-    auto hash = hash3(f, g, h) & COMP_CACHE_MASK;
+    auto hash = hash3(f, g, h) & _compCacheMask;
     CacheData3 &c = _iteTbl[hash];
     c._f = f;
     c._g = g;
@@ -685,6 +759,8 @@ BddImpl::cleanCaches(const bool force)
 {
   cleanAndCache(force);
   cleanXorCache(force);
+  cleanRestrictCache(force);
+  cleanCubeCache(force);
   cleanIteCache(force);
 } // BddImpl::cleanCaches
 
@@ -723,6 +799,33 @@ BddImpl::cleanXorCache(bool force)
     } // if
   } // for
 } // BddImpl::cleanXorCache
+
+
+//      Function : BddImpl::cleanRestrictCache
+//      Abstract : Clean up the restrict cache
+void
+BddImpl::cleanRestrictCache(bool force)
+{
+  for (auto &data : _restrictTbl) {
+    if (force ||
+        nodeUnmarked(data._f, 0) ||
+        nodeUnmarked(data._g, 0) ||
+        nodeUnmarked(data._r, 0)) {
+      data._f = _nullNode;
+      data._g = _nullNode;
+      data._r = _nullNode;
+    } // if
+  } // for
+} // BddImpl::cleanRestrictCache
+
+
+//      Function : BddImpl::cleanCubeCache
+//      Abstract : Clean up the cube cache
+void
+BddImpl::cleanCubeCache(bool force)
+{
+  _cubeTbl.clear();
+} // BddImpl::cleanCubeCache
 
 
 //      Function : BddImpl::cleanIteCache

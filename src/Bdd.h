@@ -47,6 +47,7 @@ using BddVec = std:: vector<BddPtr>;
 class BddMgr {
 public:
   BddMgr();
+  BddMgr(int numVars, int cacheSz);
   ~BddMgr();
 
   BddMgr(const BddMgr &) = delete; // Copy CTOR

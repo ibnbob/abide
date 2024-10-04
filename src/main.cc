@@ -87,7 +87,7 @@ testMem()
     cout << "cube = cubeFactor(g)\n";
     VALIDATE(cube == c);
   } // scope 1
-  VALIDATE(mgr.gc(true) == 37);
+  VALIDATE(mgr.gc(true) == 12);
   VALIDATE(mgr.nodesAllocd() == 2);
   VALIDATE(mgr.checkMem());
 
@@ -111,6 +111,9 @@ testOps()
   Bdd c = mgr.getLit(3);
   Bdd d = mgr.getLit(4);
   Bdd e = mgr.getLit(5);
+  Bdd f = mgr.getLit(6);
+  Bdd g = mgr.getLit(7);
+  Bdd h = mgr.getLit(8);
 
   VALIDATE(~a == a.inv());
   VALIDATE(a*b == a.and2(b));
@@ -152,6 +155,12 @@ testOps()
   cout << "F = a*c + b*~c" << endl;
   cout << "G = d*e" << endl;
   VALIDATE(F.compose(c.getTopVar(), G) == a*d*e + b*(~d + ~e));
+
+  F = (a + b) * (~c) * (d + e) * f * (g + h);
+  G = F.cubeFactor();
+  cout << "F = (a + b) * c * (d + e) * f * (g + h)" << endl;
+  cout << "G = F.cubeFactor()" << endl;
+  VALIDATE(G == ~c*f);
 
   F = (~a + ~b) * (c + d);
   G = F.oneCube();

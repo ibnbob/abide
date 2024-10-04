@@ -28,9 +28,8 @@ namespace {
   const unsigned int BDD_VEC_SZ = (1<<BDD_VEC_LG_SZ);
   const unsigned int BDD_VEC_MASK = (BDD_VEC_SZ-1);
 
-  const unsigned int COMP_CACHE_LG_SZ = 20;
-  const unsigned int COMP_CACHE_SZ = (1<<COMP_CACHE_LG_SZ);
-  const unsigned int COMP_CACHE_MASK = (COMP_CACHE_SZ-1);
+  const int DFLT_VAR_SZ = 128;
+  const int DFLT_CACHE_SZ = (1<<20);
 } // anonymous namespace
 
 
@@ -39,8 +38,10 @@ namespace {
 class BddImpl {
 public:
   // BddImpl.cc
-  BddImpl();
+  BddImpl(unsigned int numVars, unsigned int cacheSz);
   ~BddImpl();
+  void initialize(unsigned int numVars, unsigned int cacheSz);
+
   BDD getLit(BddLit lit);
   BDD getIthLit(BddIndex index);
   unsigned int countNodes(BDDVec &bdds) const;
@@ -216,14 +217,21 @@ private:
   void insertAndCache(BDD f, BDD g, BDD r);
   BDD getXorCache(BDD f, BDD g);
   void insertXorCache(BDD f, BDD g, BDD r);
+  BDD getRestrictCache(BDD f, BDD g);
+  void insertRestrictCache(BDD f, BDD g, BDD r);
+  BDD getCubeCache(BDD f);
+  void insertCubeCache(BDD f, BDD r);
   BDD getIteCache(BDD f, BDD g, BDD h);
   void insertIteCache(BDD f,
                       BDD g,
                       BDD h,
                       BDD r);
+
   void cleanCaches(bool force);
   void cleanAndCache(bool force);
   void cleanXorCache(bool force);
+  void cleanRestrictCache(bool force);
+  void cleanCubeCache(bool force);
   void cleanIteCache(bool force);
 
   unsigned int index(BDD f) const;
@@ -273,6 +281,9 @@ private:
   UniqTbls _uniqTbls;
 
   // Computed tables.
+  unsigned int _compCacheSz;
+  unsigned int _compCacheMask;
+
   struct CacheData2 {
     BDD _f;
     BDD _g;
@@ -281,6 +292,7 @@ private:
   using ComputedTbl2 = std::vector<CacheData2>;
   ComputedTbl2 _andTbl;
   ComputedTbl2 _xorTbl;
+  ComputedTbl2 _restrictTbl;
 
   struct CacheData3 {
     BDD _f;
@@ -291,7 +303,7 @@ private:
   using ComputedTbl3 = std::vector<CacheData3>;
   ComputedTbl3 _iteTbl;
 
-  std::unordered_map<BDD, BDD> _smoothTbl;
+  std::unordered_map<BDD, BDD> _cubeTbl;
 
   // Stats
   CacheStats _cacheStats;

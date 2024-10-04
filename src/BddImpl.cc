@@ -7,7 +7,7 @@
 
 //      Function : BddImpl::BddImpl
 //      Abstract : CTOR
-BddImpl::BddImpl() :
+BddImpl::BddImpl(unsigned int numVars, unsigned int cacheSz) :
   _gcLock(0),
   _maxIndex(0),
   _curNodes(0),
@@ -22,9 +22,7 @@ BddImpl::BddImpl() :
   _zeroNode(0),
   _uniqTbls(*this)
 {
-  _andTbl.resize(COMP_CACHE_SZ);
-  _xorTbl.resize(COMP_CACHE_SZ);
-  _iteTbl.resize(COMP_CACHE_SZ);
+  initialize(numVars, cacheSz);
 
   _nullNode = allocateNode();
   assert(_nullNode == 0);
@@ -48,6 +46,30 @@ BddImpl::~BddImpl()
   delete [] _nodes;
 #endif
 } // BddImpl::~BddImpl
+
+
+//      Function : BddImpl::initialize
+//      Abstract :
+void
+BddImpl::initialize(unsigned int numVars, unsigned int cacheSz)
+{
+  _var2Index.resize(numVars+1);
+  _index2BddVar.resize(numVars+1);
+  for (unsigned int idx = 1; idx <= numVars; ++idx) {
+    _var2Index[idx] = _index2BddVar[idx] = idx;
+  } // for
+
+  _compCacheSz = 1;
+  while (_compCacheSz < cacheSz) {
+    _compCacheSz *= 2;
+  } // while
+  _compCacheMask = _compCacheSz - 1;
+
+  _andTbl.resize(_compCacheSz);
+  _xorTbl.resize(_compCacheSz);
+  _restrictTbl.resize(_compCacheSz);
+  _iteTbl.resize(_compCacheSz);
+} // BddImpl::initialize
 
 
 //      Function : BddImpl::getLit
