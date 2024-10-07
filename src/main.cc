@@ -15,6 +15,7 @@ void testProduct();
 void testXor();
 void testDnf();
 void printDnf(Dnf &dnf);
+void printCube(Bdd cube);
 
 #define VALIDATE(expr) cout << (expr ? "PASSED: " : "FAILED: ") << #expr << endl;
 
@@ -85,9 +86,10 @@ testMem()
     cout << "g = g * c\n";
     Bdd cube = g.cubeFactor();
     cout << "cube = cubeFactor(g)\n";
+
     VALIDATE(cube == c);
   } // scope 1
-  VALIDATE(mgr.gc(true) == 12);
+  VALIDATE(mgr.gc(true) == 17);
   VALIDATE(mgr.nodesAllocd() == 2);
   VALIDATE(mgr.checkMem());
 
@@ -310,3 +312,23 @@ printDnf(Dnf &dnf)
   cout << "--- DNF END -----" << endl;
 } // printDnf
 
+//      Function : printCube
+//      Abstract : Prints a cube.
+void
+printCube(Bdd cube)
+{
+  while (!cube.isOne()) {
+    int var = cube.getTopVar();
+    Bdd hi = cube.getThen();
+    Bdd lo = cube.getElse();
+    assert(hi.isZero() || lo.isZero());
+    if (lo.isZero()) {
+      std::cout << var << " ";
+      cube = hi;
+    } else {
+      std::cout << -var << " ";
+      cube = lo;
+    } // if
+  } // while
+  std::cout << std::endl;
+} // printCube

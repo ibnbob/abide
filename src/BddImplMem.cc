@@ -15,7 +15,8 @@
 //////////////////////////////////////////////////////////////////////////////
 
 //      Function : BddImpl::gc
-//      Abstract : Perform a garbage collection.
+//      Abstract : Perform a garbage collection. Return the number
+//      collected nodes.
 unsigned int
 BddImpl::gc(bool force, bool verbose)
 {

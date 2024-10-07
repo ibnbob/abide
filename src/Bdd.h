@@ -38,6 +38,7 @@ using BddVar = uint32_t;
 using BddLit = int32_t;
 using BddIndex = uint32_t;
 using BddVarVec = std::vector<BddVar>;
+using BddIndexVec = std::vector<BddIndex>;
 using BddPtr = std::shared_ptr<Bdd>;
 using BddSet = std::unordered_set<BddPtr>;
 using BddVec = std:: vector<BddPtr>;

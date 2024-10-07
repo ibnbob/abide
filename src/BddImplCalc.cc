@@ -57,7 +57,6 @@ BddImpl::apply2(BDD f, BDD g, BddOp op)
   return r;
 } // BddImpl::apply2
 
-
 //      Function : BddImpl::restrict
 //      Abstract : Computes the cofactor of f w.r.t. c.
 BDD
@@ -121,28 +120,99 @@ BddImpl::cubeFactor(BDD f)
     return f;
   } // if
 
-  BDD rtn = getCubeCache(f);
-  if (!rtn) {
-    _cacheStats.incCompMiss();
-    BddIndex x = getIndex(f);
-    BDD f0 = getXLo(f);
-    BDD f1 = getXHi(f);
-    BDD c1 = cubeFactor(f1);
-    BDD c0 = cubeFactor(f0);
-    if (isZero(f0)) {
-      rtn = makeNode(x, c1, _zeroNode);
-    } else if (isZero(f1)) {
-      rtn = makeNode(x, _zeroNode, c0);
-    } else {
-      rtn = apply2(c1, c0, OR);
-    } // if
-    insertCubeCache(f, rtn);
-  } else {
-    _cacheStats.incCompHit();
+  FnSet fns{f};
+  BddIndexVec indices;
+  for (const auto &var : supportVec(f)) {
+    indices.push_back(_var2Index[var]);
+  } // for
+  std::reverse(indices.begin(), indices.end());
+
+  BDD rtn = cubeFactor(indices, fns);
+
+  return rtn;
+} // BddImpl::cubeFactor
+
+
+//      Function : BddImpl::cubeFactor
+//      Abstract : Recursive step.
+BDD
+BddImpl::cubeFactor(BddIndexVec &indices, const FnSet &fns)
+{
+  BDD rtn = _oneNode;
+
+  if (indices.size()) {
+    BddIndex index = indices.back();
+    indices.pop_back();
+    Unateness unateness = getUnateness(index, fns);
+    FnSet nuSet = expandFnSet(index, fns);
+    rtn = cubeFactor(indices, nuSet);
+
+    switch (unateness) {
+      case POS:
+        rtn = makeNode(index, rtn, _zeroNode);
+        break;
+      case NEG:
+        rtn = makeNode(index, _zeroNode, rtn);
+      break;
+      case BINATE:
+        break;
+    } // switch
   } // if
 
   return rtn;
 } // BddImpl::cubeFactor
+
+
+//      Function : BddImpl::getUnateness
+//      Abstract : Return the unateness of the function set w.r.t. the
+//      variable. The variable is always the top variable of the set.
+BddImpl::Unateness
+BddImpl::getUnateness(const BddIndex idx, const FnSet &fns)
+{
+  bool isPos = true;
+  bool isNeg = true;
+
+  for (const auto &f : fns) {
+    if (isOne(f)) {
+      return BINATE;
+    } else if (! isZero(f)) {
+      if (getIndex(f) != idx) {
+        return BINATE;
+      } // if
+      if (! isZero(getXLo(f))) {
+        isPos = false;
+      } // if
+      if (! isZero(getXHi(f))) {
+        isNeg = false;
+      } // if
+    } // if
+  } // for
+
+  assert(!(isPos && isNeg));
+
+  return (isPos ? POS :
+          isNeg ? NEG :
+          BINATE);
+} // BddImpl::getUnateness
+
+
+//      Function : BddImpl::expandFnSet
+//      Abstract : Expand the function set with all cofactors w.r.t. index.
+BddImpl::FnSet
+BddImpl::expandFnSet(const BddIndex index, const FnSet &fns)
+{
+  FnSet rtn;
+  for (const auto &f : fns) {
+    if (index == getIndex(f)) {
+      rtn.insert(getXHi(f));
+      rtn.insert(getXLo(f));
+    } else {
+      rtn.insert(f);
+    } // if
+  } // for
+
+  return rtn;
+} // BddImpl::expandFnSet
 
 
 //      Function : BddImpl::supportVec
@@ -685,33 +755,6 @@ BddImpl::insertRestrictCache(BDD f, BDD g, BDD r)
 } // BddImpl::insertRestrictCache
 
 
-//      Function : BddImpl::getCubeCache
-//      Abstract : Retrieves an entry from the cube cache if it is
-//      there.
-BDD
-BddImpl::getCubeCache(BDD f)
-{
-  if (auto entry = _cubeTbl.find(f);
-      entry != _cubeTbl.end()) {
-    return entry->second;
-  } // if
-
-  return _nullNode;
-} // BddImpl::getCubeCache
-
-
-//      Function : BddImpl::insertCubeCache
-//      Abstract : Inserts a result into the cube cache.
-void
-BddImpl::insertCubeCache(BDD f, BDD r)
-{
-  assert(r);
-  if (r) {
-    _cubeTbl[f] = r;
-  } // if
-} // BddImpl::insertCubeCache
-
-
 //      Function : BddImpl::getIteCache
 //      Abstract : Looks in the computed cache to see if the
 //      ite(f,g,h) has been saved.
@@ -760,7 +803,6 @@ BddImpl::cleanCaches(const bool force)
   cleanAndCache(force);
   cleanXorCache(force);
   cleanRestrictCache(force);
-  cleanCubeCache(force);
   cleanIteCache(force);
 } // BddImpl::cleanCaches
 
@@ -817,15 +859,6 @@ BddImpl::cleanRestrictCache(bool force)
     } // if
   } // for
 } // BddImpl::cleanRestrictCache
-
-
-//      Function : BddImpl::cleanCubeCache
-//      Abstract : Clean up the cube cache
-void
-BddImpl::cleanCubeCache(bool force)
-{
-  _cubeTbl.clear();
-} // BddImpl::cleanCubeCache
 
 
 //      Function : BddImpl::cleanIteCache

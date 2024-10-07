@@ -100,6 +100,16 @@ private:
   friend class UniqTbl;
   BDD apply2(BDD f, BDD g, BddOp op);
 
+  enum Unateness {
+    POS,
+    NEG,
+    BINATE
+  };
+  using FnSet = std::unordered_set<BDD>;
+  BDD cubeFactor(BddIndexVec &indices, const FnSet &fns);
+  Unateness getUnateness(BddIndex idx, const FnSet &fns);
+  FnSet expandFnSet(BddIndex idx, const FnSet &fns);
+
   // Interface from type BDD type to type BddNode.
   bool isNegPhase(BDD f) const { return f & 0x01; };
   bool isPosPhase(BDD f) const { return !(f & 0x01); };
@@ -219,8 +229,6 @@ private:
   void insertXorCache(BDD f, BDD g, BDD r);
   BDD getRestrictCache(BDD f, BDD g);
   void insertRestrictCache(BDD f, BDD g, BDD r);
-  BDD getCubeCache(BDD f);
-  void insertCubeCache(BDD f, BDD r);
   BDD getIteCache(BDD f, BDD g, BDD h);
   void insertIteCache(BDD f,
                       BDD g,
@@ -231,7 +239,6 @@ private:
   void cleanAndCache(bool force);
   void cleanXorCache(bool force);
   void cleanRestrictCache(bool force);
-  void cleanCubeCache(bool force);
   void cleanIteCache(bool force);
 
   unsigned int index(BDD f) const;
@@ -302,8 +309,6 @@ private:
   }; // CacheData3
   using ComputedTbl3 = std::vector<CacheData3>;
   ComputedTbl3 _iteTbl;
-
-  std::unordered_map<BDD, BDD> _cubeTbl;
 
   // Stats
   CacheStats _cacheStats;
