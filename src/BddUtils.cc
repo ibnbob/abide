@@ -423,10 +423,12 @@ extractDnf(Bdd &f)
 {
   Interval ff(f);
   auto [g, dnf] = extractDnf(ff);
-  for (auto &term : dnf) {
-    std::sort(term.begin(), term.end(),
-              [](int a, int b) { return std::abs(a) < std::abs(b);});
-  } // for
+
+  // for (auto &term : dnf) {
+  //   std::sort(term.begin(), term.end(),
+  //             [](int a, int b) { return std::abs(a) < std::abs(b);});
+  // } // for
+
   return dnf;
 } // extractDnf
 
