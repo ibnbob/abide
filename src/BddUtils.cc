@@ -368,14 +368,14 @@ dnf2Bdd(const BddMgr &mgr, Dnf &dnf)
 DnfPair
 extractDnf(Interval &f)
 {
-  Dnf rtn;
+  Dnf dnf;
   if (f.min().isZero()) {
-    return {f.min(), rtn};
+    return {f.min(), dnf};
   } // if
 
   if (f.max().isOne()) {
-    rtn.resize(1);
-    return {f.max(), rtn};
+    dnf.resize(1);
+    return {f.max(), dnf};
   } // if
 
   Bdd x = f.getTopVar();
@@ -388,8 +388,10 @@ extractDnf(Interval &f)
 
   auto [g0, dnf0] = extractDnf(fp0);
   assert(g0 == dnf2Bdd(*x.getMgr(), dnf0));
+  assert(fp0.contains(g0));
   auto [g1, dnf1] = extractDnf(fp1);
   assert(g1 == dnf2Bdd(*x.getMgr(), dnf1));
+  assert(fp1.contains(g1));
 
   Interval fpp0(f0.min()*~g0, f0.max());
   Interval fpp1(f1.min()*~g1, f1.max());
@@ -397,11 +399,14 @@ extractDnf(Interval &f)
 
   auto [g2, dnf2] = extractDnf(fStar);
   assert(g2 == dnf2Bdd(*x.getMgr(), dnf2));
+  assert(fStar.contains(g2));
 
   Bdd g = ~x*g0 + x*g1 + g2;
-  rtn = combineDnf(x, dnf0, dnf1, dnf2);
+  dnf = combineDnf(x, dnf0, dnf1, dnf2);
+  assert(g == dnf2Bdd(*x.getMgr(), dnf));
+  assert(f.contains(g));
 
-  return {g, rtn};
+  return {g, dnf};
 } // extractDnf
 
 
@@ -418,8 +423,6 @@ extractDnf(Bdd &f)
 {
   Interval ff(f);
   auto [g, dnf] = extractDnf(ff);
-  assert(f == g);
-  assert(f == dnf2Bdd(*f.getMgr(), dnf));
   for (auto &term : dnf) {
     std::sort(term.begin(), term.end(),
               [](int a, int b) { return std::abs(a) < std::abs(b);});
