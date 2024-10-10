@@ -5,6 +5,8 @@
 
 #include "BddImpl.h"
 
+namespace abide {
+
 //      Function : BddImpl::BddImpl
 //      Abstract : CTOR
 BddImpl::BddImpl(unsigned int numVars, unsigned int cacheSz) :
@@ -185,3 +187,5 @@ BddImpl::printRec(const BDD f, const unsigned int level) const
     } // if
   } // if
 } // BddImpl::printRec
+
+} // namespace abide

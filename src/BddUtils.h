@@ -19,6 +19,8 @@
 
 #include <Bdd.h>
 
+namespace abide {
+
 Bdd findProduct(const Bdd &f);
 Bdd findXor(const Bdd &f);
 
@@ -27,5 +29,7 @@ using Dnf = std::vector<Term>;
 
 Dnf extractDnf(Bdd &f);
 Bdd dnf2Bdd(const BddMgr &mgr, Dnf &dnf);
+
+} // namespace abide
 
 #endif // BDDUTILS_H

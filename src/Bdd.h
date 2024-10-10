@@ -13,6 +13,8 @@
 #include <unordered_set>
 #include <vector>
 
+namespace abide {
+
 //
 // Forward class declarations.
 //
@@ -565,5 +567,6 @@ private:
   const BddMgr *_mgr;
 }; // BddFnSet
 
+} // namespace abide
 
 #endif // BDD_H

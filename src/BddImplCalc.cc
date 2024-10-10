@@ -7,6 +7,8 @@
 #include <cassert>
 #include <algorithm>
 
+namespace abide {
+
 //      Function : BddImpl::apply
 //      Abstract : Apply OP to F and G with retry after gc if null..
 BDD
@@ -880,3 +882,4 @@ BddImpl::cleanIteCache(bool force)
   } // for
 } // BddImpl::cleanIteCache
 
+} // namespace abide

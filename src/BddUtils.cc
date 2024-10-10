@@ -6,6 +6,7 @@
 #include "BddUtils.h"
 #include <algorithm>
 
+namespace abide {
 
 ////////////////////////////////////////////////////////////////
 //
@@ -432,3 +433,4 @@ extractDnf(Bdd &f)
   return dnf;
 } // extractDnf
 
+} // namespace abide

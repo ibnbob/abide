@@ -9,6 +9,8 @@
 #include <Bdd.h>
 #include <cassert>
 
+namespace abide {
+
 //      Class    : BddNode
 //      Abstract : A Bdd node.
 class BddNode {
@@ -68,5 +70,7 @@ private:
   uint32_t _xrefs:24;
   uint32_t _marks:8;
 }; // BddNode
+
+} // namespace abide
 
 #endif // BDDNODE_H

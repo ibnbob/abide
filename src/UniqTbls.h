@@ -11,6 +11,8 @@
 #include "CacheStats.h"
 #include "Defines.h"
 
+namespace abide {
+
 //      Class    : UniqTbls
 //      Abstract : Unique table for nodes with the same index (level).
 class UniqTbl {
@@ -78,5 +80,7 @@ private:
   BddImpl &_impl;
   UniqTblVec _tables;
 }; // UniqTbls
+
+} // namespace abide
 
 #endif // UNIQTBLS_H

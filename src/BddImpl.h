@@ -18,6 +18,8 @@
 #include <unordered_map>
 #include <vector>
 
+namespace abide {
+
 //
 // Typedefs
 //
@@ -428,5 +430,7 @@ inline unsigned int hash3(unsigned int a,
 
   return rtn;
 } // hash3
+
+} // namespace abide
 
 #endif // BDDIMPL_H

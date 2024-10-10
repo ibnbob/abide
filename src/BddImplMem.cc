@@ -8,6 +8,8 @@
 #include <cstring>
 #include <iostream>
 
+namespace abide {
+
 //////////////////////////////////////////////////////////////////////////////
 //
 // Public Methods
@@ -698,3 +700,5 @@ BddImpl::countFreeNodes() const
   } // while
   return cnt;
 } // BddImpl::countFreeNodes
+
+} // namespace abide

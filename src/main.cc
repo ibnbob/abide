@@ -9,6 +9,8 @@
 using std::cout;
 using std::endl;
 
+using namespace abide;
+
 void testMem();
 void testOps();
 void testProduct();

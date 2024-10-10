@@ -7,6 +7,7 @@
 #include <BddImpl.h>
 #include <climits>
 
+namespace abide {
 
 // BddMgr
 
@@ -601,3 +602,4 @@ BddFnSet::eliminate(const Bdd lit) const
   return rtn;
 } // BddFnSet::eliminate
 
+} // namespace abide

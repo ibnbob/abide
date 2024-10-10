@@ -5,6 +5,8 @@
 
 #include <BddImpl.h>
 
+namespace abide {
+
 namespace {
   const unsigned int UNIQ_LG_SZ = 12;
   const unsigned int UNIQ_INIT_SZ = 1 << UNIQ_LG_SZ;
@@ -204,3 +206,4 @@ UniqTbls::~UniqTbls()
   // _index2BddVar.clear();
 } // UniqTbls::~UniqTbls
 
+} // namespace abide
