@@ -5,4 +5,4 @@ EXE	= iscas
 LIB	=
 LIBS    = libabide
 #LOPTS	= -l boost_program_options -pthread
-CFLAGSL = -Wall -Werror
+CFLAGSL = -Wall -Werror -Wextra

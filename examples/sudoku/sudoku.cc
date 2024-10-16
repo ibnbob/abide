@@ -6,6 +6,8 @@
 #include "Bdd.h"
 #include "BddUtils.h"
 
+using namespace abide;
+
 #include <fstream>
 
 using std::cin;

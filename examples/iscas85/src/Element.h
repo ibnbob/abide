@@ -10,6 +10,8 @@
 #include <string>
 #include <vector>
 
+using namespace abide;
+
 //      Enum     : ElType
 //      Abstract : Allowable element types
 enum class ElType {

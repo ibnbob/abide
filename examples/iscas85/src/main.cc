@@ -49,20 +49,20 @@ main(int argc, char *argv[])
   int c;
   while((c = getopt(argc, argv, "hrR:W:")) != -1) {
     switch (c) {
-    case 'h':
+     case 'h':
       usage();
       return 0;
       break;
-    case 'r':
+     case 'r':
       reorder = true;
       break;
-    case 'R':
+     case 'R':
       readVarFn = optarg;
       break;
-    case 'W':
+     case 'W':
       writeVarFn = optarg;
       break;
-    default:
+     default:
       usage();
       return 1;
     } // switch

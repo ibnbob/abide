@@ -32,36 +32,36 @@ std::ostream&
 operator<<(std::ostream& os, const ElType type)
 {
   switch(type) {
-    case ElType::INPUT:
-      os << "INPUT";
-      break;
-    case ElType::BUF:
-      os << "BUF";
-      break;
-    case ElType::INV:
-      os << "INV";
-      break;
-    case ElType::AND:
-      os << "AND";
-      break;
-    case ElType::OR:
-      os << "OR";
-      break;
-    case ElType::NAND:
-      os << "NAND";
-      break;
-    case ElType::NOR:
-      os << "NOR";
-      break;
-    case ElType::XOR:
-      os << "XOR";
-      break;
-    case ElType::XNOR:
-      os << "XNOR";
-      break;
-    case ElType::MERDE:
-      os << "MERDE";
-      break;
+   case ElType::INPUT:
+    os << "INPUT";
+    break;
+   case ElType::BUF:
+    os << "BUF";
+    break;
+   case ElType::INV:
+    os << "INV";
+    break;
+   case ElType::AND:
+    os << "AND";
+    break;
+   case ElType::OR:
+    os << "OR";
+    break;
+   case ElType::NAND:
+    os << "NAND";
+    break;
+   case ElType::NOR:
+    os << "NOR";
+    break;
+   case ElType::XOR:
+    os << "XOR";
+    break;
+   case ElType::XNOR:
+    os << "XNOR";
+    break;
+   case ElType::MERDE:
+    os << "MERDE";
+    break;
   } // switch
 
   return os;

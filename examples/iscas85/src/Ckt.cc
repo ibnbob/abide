@@ -238,38 +238,38 @@ Ckt::buildBdd(ElId id)
   if (!bdd.valid()) {
     // cout << "Processing element " << el.getName() << endl;
     switch (el.getType()) {
-      case ElType::INPUT:
-	bdd = buildInputBdd(el);
-	break;
-      case ElType::BUF:
-	bdd = buildBufBdd(el);
-	break;
-      case ElType::INV:
-	bdd = buildInvBdd(el);
-	break;
-      case ElType::AND:
-	bdd = buildAndBdd(el);
-	break;
-      case ElType::OR:
-	bdd = buildOrBdd(el);
-	break;
-      case ElType::NAND:
-	bdd = buildNandBdd(el);
-	break;
-      case ElType::NOR:
-	bdd = buildNorBdd(el);
-	break;
-      case ElType::XOR:
-	bdd = buildXorBdd(el);
-	break;
-      case ElType::XNOR:
-	bdd = buildXnorBdd(el);
-	break;
-      case ElType::MERDE:
-      default:
-	assert(false);
-	bdd = Bdd();
-	break;
+     case ElType::INPUT:
+      bdd = buildInputBdd(el);
+      break;
+     case ElType::BUF:
+      bdd = buildBufBdd(el);
+      break;
+     case ElType::INV:
+      bdd = buildInvBdd(el);
+      break;
+     case ElType::AND:
+      bdd = buildAndBdd(el);
+      break;
+     case ElType::OR:
+      bdd = buildOrBdd(el);
+      break;
+     case ElType::NAND:
+      bdd = buildNandBdd(el);
+      break;
+     case ElType::NOR:
+      bdd = buildNorBdd(el);
+      break;
+     case ElType::XOR:
+      bdd = buildXorBdd(el);
+      break;
+     case ElType::XNOR:
+      bdd = buildXnorBdd(el);
+      break;
+     case ElType::MERDE:
+     default:
+      assert(false);
+      bdd = Bdd();
+      break;
     } // switch
   } // fi
 

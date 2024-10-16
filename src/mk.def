@@ -3,4 +3,4 @@ EXPORT	= Bdd.h BddUtils.h
 ESRC 	= main.cc
 EXE	= test_bdd
 LIB	= abide
-CFLAGSL = -Wall -Werror
+CFLAGSL = -Wall -Werror -Wextra

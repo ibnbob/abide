@@ -31,28 +31,28 @@ BddImpl::apply2(BDD f, BDD g, BddOp op)
 {
   BDD r = _nullNode;
   switch (op) {
-    case AND:
-      r = and2(f, g);
-      break;
-    case NAND:
-      r = invert(and2(f, g));
-      break;
-    case OR:
-      r = invert(and2(invert(f), invert(g)));
-      break;
-    case NOR:
-      r = and2(invert(f), invert(g));
-      break;
-    case XOR:
-      r = xor2(f, g);
-      break;
-    case XNOR:
-      r = invert(xor2(f, g));
-      break;
-    case IMPL:
-      r = invert(and2(f, invert(g)));
-      break;
-    default:
+   case AND:
+    r = and2(f, g);
+    break;
+   case NAND:
+    r = invert(and2(f, g));
+    break;
+   case OR:
+    r = invert(and2(invert(f), invert(g)));
+    break;
+   case NOR:
+    r = and2(invert(f), invert(g));
+    break;
+   case XOR:
+    r = xor2(f, g);
+    break;
+   case XNOR:
+    r = invert(xor2(f, g));
+    break;
+   case IMPL:
+    r = invert(and2(f, invert(g)));
+    break;
+   default:
     assert(false);
   } // switch
 

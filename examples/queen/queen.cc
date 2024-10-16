@@ -1,6 +1,8 @@
 #include <stdlib.h>
 #include "Bdd.h"
 
+using namespace abide;
+
 #include "Ticker.h"
 using namespace std;
 
