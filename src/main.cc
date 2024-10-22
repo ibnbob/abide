@@ -24,7 +24,7 @@ void printCube(Bdd cube);
 //      Function : main
 //      Abstract : Driver to test minimal functionality.
 int
-main(int argc, char *argv[])
+main()
 {
   testMem();
   testOps();
