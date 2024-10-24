@@ -3,8 +3,9 @@
 //      Abstract : Sudoku solver using BDDs.
 //
 
-#include "Bdd.h"
-#include "BddUtils.h"
+#include "colors.h"
+#include <Bdd.h>
+#include <BddUtils.h>
 
 using namespace abide;
 
@@ -57,6 +58,7 @@ public:
   int _M = 3;
   std::string _input;
 
+  std::vector< std::vector<int> > _grid;
   BddMgr _mgr;
   Bdd _solution;
 }; // Sudoku
@@ -69,6 +71,10 @@ Sudoku::Sudoku(std::string filename) :
 {
   _solution = _mgr.getOne();
   _input = filename;
+  _grid.resize(_N);
+  for (auto &row : _grid) {
+    row.resize(_N, 0);
+  } // for
 } // Sudoku::Sudoku
 
 
@@ -234,8 +240,11 @@ Sudoku::addLine(std::istream &strm, int row)
   for (int col = 0; col < _N; ++col) {
     int val = entries[col];
     if (val) {
+      _grid[row][col] = -val;
       Bdd var = entryToVar(row, col, val-1);
       _solution *= var;
+    } else {
+      _grid[row][col] = 0;
     } // if
   } // for
 } // Sudoku::addLine
@@ -341,12 +350,6 @@ Sudoku::unpackCell(int c)
 void
 Sudoku::printSolution()
 {
-  std::vector< std::vector<int> > grid;
-  grid.resize(_N);
-  for (auto &row : grid) {
-    row.resize(_N, 0);
-  } // for
-
   Bdd cube = _solution.oneCube();
   while (!cube.isOne()) {
     Bdd hi = cube.getThen();
@@ -355,20 +358,30 @@ Sudoku::printSolution()
     if (lo.isZero()) {
       Bdd var = cube.getIf();
       auto [row, col, val] = varToEntry(var);
-      assert(grid[row][col] == 0);
-      grid[row][col] = val+1;
+      assert(_grid[row][col] == 0 ||
+             _grid[row][col] == -(val+1));
+      if (_grid[row][col] == 0) {
+        _grid[row][col] = val+1;
+      } // if
+
       cube = hi;
     } else {
       cube = lo;
     } // if
   } // while
 
-  for (auto row : grid) {
+  for (auto row : _grid) {
     for (auto val : row) {
-      cout << val << " ";
+      assert(val != 0);
+      if (val < 0) {
+        cout << BOLD << RED << -val << " ";
+      } else {
+        cout << NORMAL << val << " ";
+      } // if
     } // for
     cout << endl;
   } // for
+  cout << NORMAL;
 } // Sudoku::printSolution
 
 
