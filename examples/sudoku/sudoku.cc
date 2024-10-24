@@ -16,6 +16,29 @@ using std::cout;
 using std::cerr;
 using std::endl;
 
+
+//      Struct   : GenConstraint
+//      Abstract : Represents a general constraint, i.e., a row,
+//      column or box constraint.
+struct GenConstraint {
+public:
+  GenConstraint(int row, int col) :
+    _row(row),
+    _col(col) {};     // CTOR
+  ~GenConstraint() {}; // DTOR
+
+  GenConstraint(const GenConstraint &) = delete; // Copy CTOR
+  GenConstraint &operator=(const GenConstraint &) = delete; // Copy assignment
+  GenConstraint(GenConstraint &&) = default; // Move CTOR
+  GenConstraint &operator=(GenConstraint &&) = delete; // Move
+
+  int _row;
+  int _col;
+}; // GenConstraint
+
+using ConstrVec = std::vector<GenConstraint>;
+using Constraints = std::vector<ConstrVec>;
+
 //      Class    : Sudoku
 //      Abstract : Class for solving Sudoku puzzles.
 class Sudoku {
@@ -28,23 +51,31 @@ public:
   Sudoku(Sudoku &&) = delete; // Move CTOR
   Sudoku &operator=(Sudoku &&) = delete; // Move assignment
   void readPuzzleConstraints();
-  void buildGeneralConstraints();
+  void buildCommonConstraints();
   void printSolution();
 
  private:
   using Entry = std::tuple<int, int, int>;
   using Cell = std::tuple<int, int>;
 
-  void buildRowConstraints();
-  void buildColConstraints();
-  void buildBoxConstraints();
-  void buildBoxConstraint(int val, int i, int j);
-  void buildCellConstraints();
-
   void readPuzzleConstraints(std::istream &strm);
   void addLine(std::istream &strm, int row);
   std::vector<int> parseLine(std::string &line);
   bool addEntry(int row, int col, int val);
+
+  void gatherExclusionConstraints();
+  void gatherRowConstraints();
+  void gatherColConstraints();
+  void gatherBoxConstraints();
+  void gatherBoxConstraint(int i, int j);
+
+  void buildExclusionConstraints();
+  void buildRowConstraints(int row);
+  void buildColConstraints(int col);
+  void buildBoxConstraints(int row, int col);
+  void buildBoxConstraints(int row, int col, int val);
+
+  void buildCellConstraints();
 
   Bdd entryToVar(int row, int col, int val);
   Entry varToEntry(const Bdd var);
@@ -57,6 +88,8 @@ public:
   int _N = 9;
   int _M = 3;
   std::string _input;
+
+  Constraints _constraints;
 
   std::vector< std::vector<int> > _grid;
   BddMgr _mgr;
@@ -75,122 +108,9 @@ Sudoku::Sudoku(std::string filename) :
   for (auto &row : _grid) {
     row.resize(_N, 0);
   } // for
+
+  _constraints.resize(_N+1);
 } // Sudoku::Sudoku
-
-
-//      Function : Sudoku::buildGeneralConstraints
-//      Abstract : Build the initial constraints: Every number appears
-//      in each row, column and box.
-void
-Sudoku::buildGeneralConstraints()
-{
-  buildBoxConstraints();
-  buildRowConstraints();
-  buildColConstraints();
-  buildCellConstraints();
-} // Sudoku::buildGeneralConstraints
-
-
-//      Function : Sudoku::buildRowConstraints
-//      Abstract : Add the constraint that no number appears in a
-//      row twice.
-void
-Sudoku::buildRowConstraints()
-{
-  for (int val = 0; val < _N; ++val) {
-    for (int row = 0; row < _N; ++row) {
-      Bdd rowConstraint = _mgr.getOne();
-      for (int col1 = 0; col1 < _N-1; ++col1) {
-        Bdd var1 = entryToVar(row, col1, val);
-        for (int col2 = col1+1; col2 < _N; ++col2) {
-          Bdd var2 = entryToVar(row, col2, val);
-          rowConstraint *= var1.nand2(var2);
-        } // for column 2
-      } // for column 1
-      _solution *= rowConstraint;
-    } // for each row
-  } // for each value
-} // Sudoku::buildRowConstraints
-
-
-//      Function : Sudoku::buildColConstraints
-//      Abstract : Add the constraint that no number appears in a
-//      column twice.
-void
-Sudoku::buildColConstraints()
-{
-  for (int val = 0; val < _N; ++val) {
-    for (int col = 0; col < _N; ++col) {
-      Bdd colConstraint = _mgr.getOne();
-      for (int row1 = 0; row1 < _N-1; ++row1) {
-        Bdd var1 = entryToVar(row1, col, val);
-        for (int row2 = row1+1; row2 < _N; ++row2) {
-          Bdd var2 = entryToVar(row2, col, val);
-          colConstraint *= var1.nand2(var2);
-        } // for row 2
-      } // for row 1
-      _solution *= colConstraint;
-    } // for each column
-  } // for each value
-} // Sudoku::buildColConstraints
-
-
-//      Function : Sudoku::buildBoxConstraints
-//      Abstract : Add the constraint the no number appears in each
-//      MxM box twice.
-void
-Sudoku::buildBoxConstraints()
-{
-  for (int val = 0; val < _N; ++val) {
-    for (int i = 0; i < _M; ++i) {
-      for (int j = 0; j < _M; ++j) {
-        buildBoxConstraint(val, i, j);
-      } // for
-    } // for
-  } // for
-} // Sudoku::buildBoxConstraints
-
-
-//      Function : Sudoku::buildBoxConstraint
-//      Abstract : Add contraint for this box.
-void
-Sudoku::buildBoxConstraint(int val, int i, int j)
-{
-  int row0 = i * _M;
-  int col0 = j * _M;
-
-  Bdd boxConstraint = _mgr.getOne();
-  for (int cell1 = 0; cell1 < _N-1; ++cell1) {
-    auto [row1, col1] = unpackCell(cell1);
-    Bdd var1 = entryToVar(row0+row1, col0+col1, val);
-
-    for (int cell2 = cell1+1; cell2 < _N; ++cell2) {
-      auto [row2, col2] = unpackCell(cell2);
-      Bdd var2 = entryToVar(row0+row2, col0+col2, val);
-      boxConstraint *= var1.nand2(var2);
-    } // for
-  } // for
-
-  _solution *= boxConstraint;
-} // Sudoku::buildBoxConstraint
-
-
-//      Function : Sudoku::buildCellConstraints
-//      Abstract : Add constraint the each cell contains a number.
-void
-Sudoku::buildCellConstraints()
-{
-  for (int row = 0; row < _N; ++row) {
-    for (int col = 0; col < _N; ++col) {
-      Bdd cellConstraint = _mgr.getZero();
-      for (int val = 0; val < _N; ++val) {
-        Bdd var = entryToVar(row, col, val);
-        cellConstraint += var;
-      } // for
-      _solution *= cellConstraint;
-    } // for each column
-  } // for each row
-} // Sudoku::buildCellConstraints
 
 
 //      Function : Sudoku::readPuzzleConstraints
@@ -283,6 +203,212 @@ Sudoku::addEntry(int row, int col, int val)
   _solution *= var;
   return ! _solution.isZero();
 } // Sudoku::addEntry
+
+
+//      Function : Sudoku::buildCommonConstraints
+//      Abstract : Build the constraints common to every
+//      puzzle. Exclusion constraints demand that a number appears at
+//      most once in any row, column or box. Cell constraints demand
+//      the every cell contains a number.
+void
+Sudoku::buildCommonConstraints()
+{
+  gatherExclusionConstraints();
+  buildExclusionConstraints();
+  buildCellConstraints();
+} // Sudoku::buildCommonConstraints
+
+
+//      Function : Sudoku::gatherExclusionConstraints
+//      Abstract : Gather all of the exclusion constraints sorted by
+//      the number zeroes.
+void
+Sudoku::gatherExclusionConstraints()
+{
+  gatherRowConstraints();
+  gatherColConstraints();
+  gatherBoxConstraints();
+} // Sudoku::gatherExclusionConstraints
+
+
+//      Function : Sudoku::gatherRowConstraints
+//      Abstract : Gather all the row constraints
+void
+Sudoku::gatherRowConstraints()
+{
+  for (int row = 0; row < _N; ++row) {
+    int zeroes = 0;
+    for (int col = 0; col < _N ; ++col) {
+      if (_grid[row][col] == 0) {
+        ++zeroes;
+      } // for
+    } // for
+    _constraints[zeroes].emplace_back(row, -1);
+  } // for
+} // Sudoku::gatherRowConstraints
+
+
+//      Function : Sudoku::gatherColConstraints
+//      Abstract : Gather all the column constraints
+void
+Sudoku::gatherColConstraints()
+{
+  for (int col = 0; col < _N ; ++col) {
+    int zeroes = 0;
+    for (int row = 0; row < _N; ++row) {
+      if (_grid[row][col] == 0) {
+        ++zeroes;
+      } // for
+    } // for
+    _constraints[zeroes].emplace_back(-1, col);
+  } // for
+} // Sudoku::gatherColConstraints
+
+
+//      Function : Sudoku::gatherBoxConstraints
+//      Abstract : Gather all the box constraints.
+void
+Sudoku::gatherBoxConstraints()
+{
+  for (int i = 0; i < _M; ++i) {
+    for (int j = 0; j < _M; ++j) {
+      gatherBoxConstraint(i, j);
+    } // for
+  } // for
+} // Sudoku::gatherBoxConstraints
+
+
+//      Function : Sudoku::gatherBoxConstraint
+//      Abstract : Add this box constraint.
+void
+Sudoku::gatherBoxConstraint(int i, int j)
+{
+  int row0 = i * _M;
+  int col0 = j * _M;
+  int zeroes = 0;
+
+  for (int cell = 0; cell < _N-1; ++cell) {
+    auto [row1, col1] = unpackCell(cell);
+    if (_grid[row0+row1][col0+col1] == 0) {
+      ++zeroes;
+    } // if
+  } // for
+
+  _constraints[zeroes].emplace_back(row0, col0);
+} // Sudoku::gatherBoxConstraint
+
+
+//      Function : Sudoku::buildExclusionConstraints
+//      Abstract : Build all the gathered exclusion constraints.
+void
+Sudoku::buildExclusionConstraints()
+{
+  for (auto &cvector : _constraints) {
+    for (auto &constr : cvector) {
+      if (constr._col < 0) {
+        buildRowConstraints(constr._row);
+      } else if (constr._row < 0) {
+        buildColConstraints(constr._col);
+      } else {
+        buildBoxConstraints(constr._row, constr._col);
+      } // if
+    } // for
+  } // for
+} // Sudoku::buildExclusionConstraints
+
+
+//      Function : Sudoku::buildRowConstraints
+//      Abstract : Add the constraint that no number appears in this
+//      row twice.
+void
+Sudoku::buildRowConstraints(int row)
+{
+  for (int val = 0; val < _N; ++val) {
+    Bdd rowConstraint = _mgr.getOne();
+    for (int col1 = 0; col1 < _N-1; ++col1) {
+      Bdd var1 = entryToVar(row, col1, val);
+      for (int col2 = col1+1; col2 < _N; ++col2) {
+        Bdd var2 = entryToVar(row, col2, val);
+        rowConstraint *= var1.nand2(var2);
+      } // for column 2
+    } // for column 1
+    _solution *= rowConstraint;
+  } // for each value
+} // Sudoku::buildRowConstraints
+
+
+//      Function : Sudoku::buildColConstraints
+//      Abstract : Add the constraint that no number appears in a
+//      column twice.
+void
+Sudoku::buildColConstraints(int col)
+{
+  for (int val = 0; val < _N; ++val) {
+    Bdd colConstraint = _mgr.getOne();
+    for (int row1 = 0; row1 < _N-1; ++row1) {
+      Bdd var1 = entryToVar(row1, col, val);
+      for (int row2 = row1+1; row2 < _N; ++row2) {
+        Bdd var2 = entryToVar(row2, col, val);
+        colConstraint *= var1.nand2(var2);
+      } // for row 2
+    } // for row 1
+    _solution *= colConstraint;
+  } // for each value
+} // Sudoku::buildColConstraints
+
+
+//      Function : Sudoku::buildBoxConstraints
+//      Abstract : Add the constraint the no number appears in each
+//      MxM box twice.
+void
+Sudoku::buildBoxConstraints(int row, int col)
+{
+  for (int val = 0; val < _N; ++val) {
+    buildBoxConstraints(row, col, val);
+  } // for
+} // Sudoku::buildBoxConstraints
+
+
+//      Function : Sudoku::buildBoxConstraints
+//      Abstract : Add contraint for this box.
+void
+Sudoku::buildBoxConstraints(int row, int col, int val)
+{
+  int row0 = row;
+  int col0 = col;
+
+  Bdd boxConstraint = _mgr.getOne();
+  for (int cell1 = 0; cell1 < _N-1; ++cell1) {
+    auto [row1, col1] = unpackCell(cell1);
+    Bdd var1 = entryToVar(row0+row1, col0+col1, val);
+
+    for (int cell2 = cell1+1; cell2 < _N; ++cell2) {
+      auto [row2, col2] = unpackCell(cell2);
+      Bdd var2 = entryToVar(row0+row2, col0+col2, val);
+      boxConstraint *= var1.nand2(var2);
+    } // for
+  } // for
+
+  _solution *= boxConstraint;
+} // Sudoku::buildBoxConstraints
+
+
+//      Function : Sudoku::buildCellConstraints
+//      Abstract : Add constraint the each cell contains a number.
+void
+Sudoku::buildCellConstraints()
+{
+  for (int row = 0; row < _N; ++row) {
+    for (int col = 0; col < _N; ++col) {
+      Bdd cellConstraint = _mgr.getZero();
+      for (int val = 0; val < _N; ++val) {
+        Bdd var = entryToVar(row, col, val);
+        cellConstraint += var;
+      } // for
+      _solution *= cellConstraint;
+    } // for each column
+  } // for each row
+} // Sudoku::buildCellConstraints
 
 
 //      Function : Sudoku::entryToVar
@@ -396,7 +522,7 @@ main(int argc, char *argv[])
   } // if
   Sudoku sudoku(input);
   sudoku.readPuzzleConstraints();
-  sudoku.buildGeneralConstraints();
+  sudoku.buildCommonConstraints();
   sudoku.printSolution();
 
   return 0;
