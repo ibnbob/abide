@@ -53,6 +53,7 @@ public:
   BDD apply(BDD f, BDD g, BddOp op);
   BDD restrict(BDD f, BDD c);
   BDD compose(BDD f, BddVar x, BDD g);
+  BDD andExists(BDD f, BDD g, BDD c);
   bool covers(BDD f, BDD g);
   BDD cubeFactor(BDD f);
   BDD supportCube(BDD f);
@@ -203,6 +204,8 @@ private:
   BDD and2(BDD f, BDD g);
   BDD xor2(BDD f, BDD g);
   BDD andConstant(BDD f, BDD g);
+  BDD andExists2(BDD f, BDD g, BDD c);
+  BDD andExistsTerminal(BDD f, BDD g, BDD c);
   void orderOps(BDD &f, BDD &g) {
     if (f > g) { std::swap(f, g); }
   }; // orderOps
@@ -236,12 +239,18 @@ private:
                       BDD g,
                       BDD h,
                       BDD r);
+  BDD getAndExistsCache(BDD f, BDD g, BDD h);
+  void insertAndExistsCache(BDD f,
+                            BDD g,
+                            BDD c,
+                            BDD r);
 
   void cleanCaches(bool force);
   void cleanAndCache(bool force);
   void cleanXorCache(bool force);
   void cleanRestrictCache(bool force);
   void cleanIteCache(bool force);
+  void cleanAndExistsCache(bool force);
 
   unsigned int index(BDD f) const;
   unsigned int minIndex(BDD f, BDD g) const;
@@ -311,6 +320,7 @@ private:
   }; // CacheData3
   using ComputedTbl3 = std::vector<CacheData3>;
   ComputedTbl3 _iteTbl;
+  ComputedTbl3 _andExistTbl;
 
   // Stats
   CacheStats _cacheStats;

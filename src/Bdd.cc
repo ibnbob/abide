@@ -270,6 +270,34 @@ BddMgr::compose(BDD f, BddVar x, BDD g) const
 } // BddMgr::compose
 
 
+//      Function : BddMgr::andExists
+//      Abstract : Parameters f and g are arbitrary functions and c is
+//      a product of positive literals. The result is Exists(c,
+//      f*g). This is sometimes called the relational product.
+Bdd
+BddMgr::andExists(const Bdd f, const Bdd g, const Bdd c) const
+{
+  // Bdd rtn(_impl->andExists(f._me, g._me, c._me), this);
+  // _impl->gc(false, false);
+  // return rtn;
+
+  return andExists(f._me, g._me, c._me);
+} // BddMgr::andExists
+
+
+//      Function : BddMgr::andExists
+//      Abstract : Parameters f and g are arbitrary functions and c is
+//      a product of positive literals. The result is Exists(c,
+//      f*g). This is sometimes called the relational product.
+Bdd
+BddMgr::andExists(const BDD f, const BDD g, const BDD c) const
+{
+  Bdd rtn(_impl->andExists(f, g, c), this);
+  _impl->gc(false, false);
+  return rtn;
+} // BddMgr::andExists
+
+
 //      Function : BddMgr::covers
 //      Abstract : Returns true if f covers g.
 bool

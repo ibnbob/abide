@@ -15,7 +15,9 @@ void testMem();
 void testOps();
 void testProduct();
 void testXor();
+void testAndExists();
 void testDnf();
+
 void printDnf(Dnf &dnf);
 void printCube(Bdd cube);
 
@@ -28,9 +30,12 @@ main()
 {
   testMem();
   testOps();
+  testAndExists();
+
   testProduct();
   testXor();
   testDnf();
+
   return 0;
 } // main
 
@@ -174,6 +179,47 @@ testOps()
 
   cout << endl;
 } // testOps
+
+
+
+//      Function : testAndExists
+//      Abstract : Test andExists operation.
+void
+testAndExists()
+{
+  cout << "----------------------------------------------------------------"
+       << endl;
+  cout << "Test andExists\n";
+  cout << "----------------------------------------------------------------"
+       << endl;
+  BddMgr mgr;
+  Bdd a = mgr.getLit(1);
+  Bdd b = mgr.getLit(2);
+  Bdd c = mgr.getLit(3);
+  Bdd d = mgr.getLit(4);
+  Bdd e = mgr.getLit(5);
+  Bdd f = mgr.getLit(6);
+  Bdd g = mgr.getLit(7);
+
+  Bdd G1 = e.xnor2(a * b);
+  Bdd G2 = f.xnor2(c + e);
+  Bdd G3 = g.xnor2(d * f);
+
+  cout << "G1 = e.xnor2(a * b)" << endl;
+  cout << "G2 = f.xnor2(c + e)" << endl;
+  cout << "G3 = g.xnor2(d * f)" << endl;
+
+  Bdd H1 = g.xnor2(d*(c+(a*b)));
+  Bdd H2 = mgr.andExists(G1*G2, G3, e*f);
+  Bdd H3 = G1.andExists(G2*G3, e*f);
+
+  cout << "H1 = g.xnor2(d*(c+(a*b)))" << endl;
+  cout << "H2 = mgr.andExists(G1*G2, G3, e*f)" << endl;
+  cout << "H3 = mgr.andExists(G1, G2*G3, e*f)" << endl;
+
+  VALIDATE(H1 == H2);
+  VALIDATE(H1 == H3);
+} // testAndExists
 
 
 //      Function : testProduct

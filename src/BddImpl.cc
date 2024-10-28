@@ -71,6 +71,7 @@ BddImpl::initialize(unsigned int numVars, unsigned int cacheSz)
   _xorTbl.resize(_compCacheSz);
   _restrictTbl.resize(_compCacheSz);
   _iteTbl.resize(_compCacheSz);
+  _andExistTbl.resize(_compCacheSz);
 } // BddImpl::initialize
 
 

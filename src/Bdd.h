@@ -63,6 +63,8 @@ public:
   Bdd getLit(BddLit) const;
   Bdd getIthLit(BddIndex) const;
 
+  Bdd andExists(const Bdd f, const Bdd g, const Bdd c) const;
+
   unsigned int countNodes(BDD f) const;
   unsigned int countNodes(const BddVec &bdds) const;
   unsigned int countNodes(const BddSet &bdds) const;
@@ -96,6 +98,7 @@ private:
   Bdd invert(BDD f) const;
   Bdd abs(BDD f) const;
   Bdd apply(BDD f, BDD g, BddOp op) const;
+  Bdd andExists(const BDD f, const BDD g, const BDD c) const;
   Bdd restrict(BDD f, BDD c) const;
   Bdd compose(BDD f, BddVar x, BDD g) const;
   bool covers(BDD f, BDD g) const;
@@ -160,6 +163,7 @@ public:
   Bdd xor2(const Bdd &f) const;
   Bdd xnor2(const Bdd &f) const;
   Bdd implies(const Bdd &f) const;
+  Bdd andExists(const Bdd &f, const Bdd &c) const;
 
   Bdd abs() const;
   Bdd restrict(const Bdd &f) const;
@@ -324,7 +328,7 @@ inline Bdd Bdd::inv() const {
   assert(_mgr);
 
   return _mgr->invert(_me);
-} // Bdd::implies
+} // Bdd::inv
 
 inline Bdd Bdd::and2(const Bdd &f) const {
   assert(_mgr);
@@ -367,6 +371,12 @@ inline Bdd Bdd::implies(const Bdd &f) const {
 
   return _mgr->apply(_me, f._me, IMPL);
 } // Bdd::implies
+
+inline Bdd Bdd::andExists(const Bdd &f, const Bdd &c) const {
+  assert(_mgr);
+
+  return _mgr->andExists(_me, f._me, c._me);
+} // Bdd::andExists
 
 inline Bdd Bdd::abs() const {
   assert(_mgr);

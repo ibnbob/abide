@@ -101,6 +101,88 @@ BddImpl::compose(BDD f, BddVar x, BDD g)
 } // BddImpl::compose
 
 
+//      Function : BddImpl::andExists
+//      Abstract : Compute the relational product of f and g w.r.t. c.
+BDD
+BddImpl::andExists(const BDD f, const BDD g, const BDD c)
+{
+  lockGC();
+  BDD rtn = andExists2(f, g, c);
+  unlockGC();
+
+  if (rtn == _nullNode && _gcLock == 0) {
+    gc(true, false);
+    rtn = andExists2(f, g, c);
+  } // if
+
+  return rtn;
+} // BddImpl::andExists
+
+
+//      Function : BddImpl::andExists2
+//      Abstract : Recursive step.
+BDD
+BddImpl::andExists2(BDD f, BDD g, BDD c)
+{
+  orderOps(f, g);
+
+  BDD rtn = andExistsTerminal(f, g, c);
+
+  if (rtn) {
+    return rtn;
+  } // if
+
+  rtn = getAndExistsCache(f, g, c);
+  if (!rtn) {
+    _cacheStats.incCompMiss();
+    unsigned int index = minIndex(f, g);
+    unsigned int cdx = getIndex(c);
+    while (cdx < index) {
+      c = getHi(c);
+      cdx = getIndex(c);
+    } // while
+
+    if (BDD lo = andExists2(restrict0(f, index),
+                            restrict0(g, index),
+                            restrict1(c, index));
+        lo) {
+      if (index == cdx && isOne(lo)) {
+        rtn = _oneNode;
+      } else if (BDD hi = andExists2(restrict1(f, index),
+                                     restrict1(g, index),
+                                     restrict1(c, index));
+                 hi) {
+        rtn = (index == cdx)
+          ? invert(and2(invert(lo), invert(hi)))
+          : makeNode(index, hi, lo);
+        insertAndExistsCache(f, g, c, rtn);
+      } // if lo is one
+    } // if lo computed
+  } else {
+    _cacheStats.incCompHit();
+  } // if
+
+  return rtn;
+} // BddImpl::andExists2
+
+
+//      Function : BddImpl::andExistsTerminal
+//      Abstract : Check for terminating condition.
+BDD
+BddImpl::andExistsTerminal(BDD f, BDD g, BDD c)
+{
+  if (isOne(c)) {
+    return and2(f, g);
+  } else if (isZero(f)) {
+    return _zeroNode;
+  } else if (f == invert(g)) {
+    return f;
+  } // if
+
+  return _nullNode;
+} // BddImpl::andExistsTerminal
+
+
 //      Function : BddImpl::covers
 //      Abstract : Return true if f covers g.
 bool
@@ -796,6 +878,45 @@ BddImpl::insertIteCache(const BDD f,
 } // BddImpl::insertIteCache
 
 
+//      Function : BddImpl::getAndExistsCache
+//      Abstract : Looks in the computed cache to see if the
+//      andExists(f,g,h) has been saved.
+BDD
+BddImpl::getAndExistsCache(const BDD f,
+                           const BDD g,
+                           const BDD h)
+{
+  BDD rtn = _nullNode;
+  auto hash = hash3(f, g, h) & _compCacheMask;
+  CacheData3 &c = _andExistTbl[hash];
+  if (c._f == f && c._g == g && c._h == h) {
+    rtn = c._r;
+  } // if
+
+  return rtn;
+} // BddImpl::getAndExistsCache
+
+
+//      Function : BddImpl::insertAndExistsCache
+//      Abstract : Inserts r into the computed table as being the
+//      result of ite(f,g,h).
+void
+BddImpl::insertAndExistsCache(const BDD f,
+                              const BDD g,
+                              const BDD h,
+                              const BDD r)
+{
+  if (r) {
+    auto hash = hash3(f, g, h) & _compCacheMask;
+    CacheData3 &c = _andExistTbl[hash];
+    c._f = f;
+    c._g = g;
+    c._h = h;
+    c._r = r;
+  } // if r
+} // BddImpl::insertAndExistsCache
+
+
 //      Function : BddImpl::cleanCaches
 //      Abstract : Remove cache entries with unreferenced nodes. Used
 //      after garbage collection and reordering.
@@ -806,6 +927,7 @@ BddImpl::cleanCaches(const bool force)
   cleanXorCache(force);
   cleanRestrictCache(force);
   cleanIteCache(force);
+  cleanAndExistsCache(force);
 } // BddImpl::cleanCaches
 
 
@@ -881,5 +1003,25 @@ BddImpl::cleanIteCache(bool force)
     } // if
   } // for
 } // BddImpl::cleanIteCache
+
+
+//      Function : BddImpl::cleanAndExistsCache
+//      Abstract : Clean up the andExists cache.
+void
+BddImpl::cleanAndExistsCache(bool force)
+{
+  for (auto &data : _andExistTbl) {
+    if (force ||
+        nodeUnmarked(data._f, 0) ||
+        nodeUnmarked(data._g, 0) ||
+        nodeUnmarked(data._h, 0) ||
+        nodeUnmarked(data._r, 0)) {
+      data._f = _nullNode;
+      data._g = _nullNode;
+      data._h = _nullNode;
+      data._r = _nullNode;
+    } // if
+  } // for
+} // BddImpl::cleanAndExistsCache
 
 } // namespace abide
