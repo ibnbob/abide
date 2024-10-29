@@ -176,7 +176,7 @@ BddImpl::andExistsTerminal(BDD f, BDD g, BDD c)
   } else if (isZero(f)) {
     return _zeroNode;
   } else if (f == invert(g)) {
-    return f;
+    return _zeroNode;
   } // if
 
   return _nullNode;

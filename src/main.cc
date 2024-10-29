@@ -13,10 +13,12 @@ using namespace abide;
 
 void testMem();
 void testOps();
+void testSupport();
 void testProduct();
 void testXor();
 void testAndExists();
 void testDnf();
+void testMisc();
 
 void printDnf(Dnf &dnf);
 void printCube(Bdd cube);
@@ -31,10 +33,11 @@ main()
   testMem();
   testOps();
   testAndExists();
-
+  testSupport();
   testProduct();
   testXor();
   testDnf();
+  testMisc();
 
   return 0;
 } // main
@@ -81,6 +84,13 @@ testMem()
       cout << "g = g1 * g0\n";
       VALIDATE(g.countNodes() == 9);
       VALIDATE(mgr.nodesAllocd() == 21);
+
+      mgr.lockGC();
+      mgr.lockGC();
+      VALIDATE(mgr.gc(true) == 0);
+      mgr.unlockGC();
+      VALIDATE(mgr.gc(true) == 0);
+      mgr.unlockGC();
       VALIDATE(mgr.gc(true) == 5);
       VALIDATE(mgr.nodesAllocd() == 16);
       mgr.reorder();
@@ -132,6 +142,9 @@ testOps()
   VALIDATE((a^b) == a.xor2(b));
   VALIDATE((~a^b) == a.xnor2(b));
 
+  Bdd h1 = mgr.getIthLit(8);
+  VALIDATE(h == h1);
+
   Bdd F0 = a * b;
   Bdd F1 = ~(~a + ~b);
   cout << "F0 = a * b" << endl;
@@ -180,6 +193,46 @@ testOps()
   cout << endl;
 } // testOps
 
+
+//      Function : test Support
+//      Abstract : Test support functions.
+void
+testSupport()
+{
+  cout << "----------------------------------------------------------------"
+       << endl;
+  cout << "Test support\n";
+  cout << "----------------------------------------------------------------"
+       << endl;
+  BddMgr mgr;
+  Bdd a = mgr.getLit(1);
+  Bdd b = mgr.getLit(2);
+  Bdd c = mgr.getLit(3);
+  Bdd d = mgr.getLit(4);
+  Bdd e = mgr.getLit(5);
+  Bdd f = mgr.getLit(6);
+  Bdd g = mgr.getLit(7);
+
+  Bdd F = a * (b + ~c);
+  Bdd G = d ^ e ^ f ^ g;
+  Bdd H = b * f + c * e + (a^g);
+
+  BddVec set1{F};
+  BddVec set2{F, G};
+  const BddVec set3{F, H};
+
+  BddVarVec vec1 = mgr.supportVec(set1);
+  BddVarVec vec2 = mgr.supportVec(set2);
+  BddVarVec vec3 = mgr.supportVec(set3);
+
+  VALIDATE(vec1.size() == 3);
+  VALIDATE(vec2.size() == 7);
+  VALIDATE(vec3.size() == 6);
+
+  Bdd supp = mgr.supportCube(set1);
+  BddVec suppVec{supp};
+  VALIDATE(mgr.countNodes(suppVec) == vec1.size()+1);
+} // testSupport
 
 
 //      Function : testAndExists
@@ -360,23 +413,63 @@ printDnf(Dnf &dnf)
   cout << "--- DNF END -----" << endl;
 } // printDnf
 
-//      Function : printCube
-//      Abstract : Prints a cube.
+
+//      Function : testMisc
+//      Abstract : Tidbits to increase line coverage.
 void
-printCube(Bdd cube)
+testMisc()
 {
-  while (!cube.isOne()) {
-    int var = cube.getTopVar();
-    Bdd hi = cube.getThen();
-    Bdd lo = cube.getElse();
-    assert(hi.isZero() || lo.isZero());
-    if (lo.isZero()) {
-      std::cout << var << " ";
-      cube = hi;
-    } else {
-      std::cout << -var << " ";
-      cube = lo;
-    } // if
-  } // while
-  std::cout << std::endl;
-} // printCube
+  cout << "----------------------------------------------------------------"
+       << endl;
+  cout << "Test miscellaneous:" << endl;
+  cout << "----------------------------------------------------------------"
+       << endl;
+  BddMgr mgr(2);
+  Bdd a = mgr.getLit(1);
+  Bdd b = mgr.getLit(2);
+  Bdd c = mgr.getLit(3);
+  Bdd d = mgr.getIthLit(4);
+
+  VALIDATE(a.isPosLit());
+  VALIDATE((~b).isNegLit());
+  Bdd F = a + b;
+  cout << "F = a + b" << endl;
+  VALIDATE(!F.isPosLit());
+  VALIDATE(!F.isNegLit());
+
+  b = ~b;
+  F = a^b^c;
+  cout << "F = a^b^c" << endl;
+  VALIDATE(F.getIf() == a);
+  VALIDATE(F.getThen() == (~b^c));
+  VALIDATE(F.getElse() == (b^c));
+
+  F.print();
+  F = (a + b) * (c +d);
+
+
+  BddFnSet fns;
+
+  Bdd F1 = a+c;
+  fns.insert(F1);
+  Bdd F2 = a*b;
+  fns.insert(F2);
+  VALIDATE(fns.size() == 2);
+  fns.insert(F2);
+  VALIDATE(fns.size() == 2);
+  fns.erase(F);
+  VALIDATE(fns.size() == 2);
+  fns.erase(F2);
+  VALIDATE(fns.size() == 1);
+
+  VALIDATE(F.numRefs() == 1);
+  {
+    Bdd F2 = F;
+    VALIDATE(F.numRefs() == 2);
+  }
+  VALIDATE(F.numRefs() == 1);
+
+
+  mgr.printStats();
+} // testMisc
+

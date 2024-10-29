@@ -39,17 +39,16 @@ enum BddOp {
 using BddVar = uint32_t;
 using BddLit = int32_t;
 using BddIndex = uint32_t;
+using BddVec = std::vector<Bdd>;
 using BddVarVec = std::vector<BddVar>;
 using BddIndexVec = std::vector<BddIndex>;
-using BddPtr = std::shared_ptr<Bdd>;
-using BddSet = std::unordered_set<BddPtr>;
-using BddVec = std:: vector<BddPtr>;
 
 //      Class    : BddMgr
 //      Abstract : Manager for BDD memory and operations.
 class BddMgr {
 public:
   BddMgr();
+  BddMgr(int numVars);
   BddMgr(int numVars, int cacheSz);
   ~BddMgr();
 
@@ -67,15 +66,9 @@ public:
 
   unsigned int countNodes(BDD f) const;
   unsigned int countNodes(const BddVec &bdds) const;
-  unsigned int countNodes(const BddSet &bdds) const;
-  unsigned int countNodes(const BddFnSet &bdds) const;
 
   Bdd supportCube(const BddVec &bdds) const;
-  Bdd supportCube(const BddSet &bdds) const;
-  Bdd supportCube(const BddFnSet &bdds) const;
-
-  BddVarVec supportVec(const BddSet &bdds) const;
-  BddVarVec supportVec(const BddFnSet &bdds) const;
+  BddVarVec supportVec(const BddVec &bdds) const;
 
   void lockGC() const;
   void unlockGC() const;
@@ -117,7 +110,6 @@ private:
   void incRef(BDD f) const;
   void decRef(BDD f) const;
   unsigned int numRefs(BDD f) const;
-  void print(const Bdd &f) const;
   void print(BDD f) const;
 
   // Class Data

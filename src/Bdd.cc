@@ -21,6 +21,13 @@ BddMgr::BddMgr() : BddMgr(DFLT_VAR_SZ, DFLT_CACHE_SZ)
 
 //      Function : BddMgr::BddMgr
 //      Abstract : Constructor.
+BddMgr::BddMgr(int numVars) : BddMgr(numVars, DFLT_CACHE_SZ)
+{
+} // BddMgr::BddMgr
+
+
+//      Function : BddMgr::BddMgr
+//      Abstract : Constructor.
 BddMgr::BddMgr(int numVars, int cacheSz)
 {
   _impl = std::make_unique<BddImpl>(numVars, cacheSz);
@@ -80,23 +87,10 @@ BddMgr::getIthLit(const BddIndex index) const
 //      Function : BddMgr::supportVec
 //      Abstract : Return the support of all functions as a cube.
 BddVarVec
-BddMgr::supportVec(const BddSet &bdds) const
+BddMgr::supportVec(const BddVec &bdds) const
 {
   Bdd supp(getOne());
   for (const auto &bdd : bdds) {
-    supp *= bdd->supportCube();
-  } // for
-  return supp.supportVec();
-} // BddMgr::supportVec
-
-
-//      Function : BddMgr::supportVec
-//      Abstract : Return the support of all functions as a cube.
-BddVarVec
-BddMgr::supportVec(const BddFnSet &bdds) const
-{
-  Bdd supp(getOne());
-  for (const auto &bdd : bdds.getSet()) {
     supp *= bdd.supportCube();
   } // for
   return supp.supportVec();
@@ -409,37 +403,7 @@ unsigned int
 BddMgr::countNodes(const BddVec &bdds) const
 {
   BDDVec v;
-  for (const BddPtr &bdd : bdds) {
-    v.push_back(bdd->id());
-  } // fill vect with BDDs
-
-  return _impl->countNodes(v);
-} // BddMgr::countNodes
-
-
-//      Function : BddMgr::countNodes
-//      Abstract : Count the number of nodes in the rooted at the BDDs
-//      in the set.
-unsigned int
-BddMgr::countNodes(const BddSet &bdds) const
-{
-  BDDVec v;
-  for (const BddPtr &bdd : bdds) {
-    v.push_back(bdd->id());
-  } // fill vect with BDDs
-
-  return _impl->countNodes(v);
-} // BddMgr::countNodes
-
-
-//      Function : BddMgr::countNodes
-//      Abstract : Count the number of nodes in the rooted at the BDDs
-//      in the set.
-unsigned int
-BddMgr::countNodes(const BddFnSet &bdds) const
-{
-  BDDVec v;
-  for (const Bdd &bdd : bdds.getSet()) {
+  for (const auto &bdd : bdds) {
     v.push_back(bdd.id());
   } // fill vect with BDDs
 
@@ -454,32 +418,6 @@ BddMgr::supportCube(const BddVec &bdds) const
 {
   Bdd rtn(getOne());
   for (const auto &bdd : bdds) {
-    rtn *= bdd->supportCube();
-  } // for
-  return rtn;
-} // BddMgr::supportCube
-
-
-//      Function : BddMgr::supportCube
-//      Abstract : Return the support of all functions as a cube.
-Bdd
-BddMgr::supportCube(const BddSet &bdds) const
-{
-  Bdd rtn(getOne());
-  for (const auto &bdd : bdds) {
-    rtn *= bdd->supportCube();
-  } // for
-  return rtn;
-} // BddMgr::supportCube
-
-
-//      Function : BddMgr::supportCube
-//      Abstract : Return the support of all functions as a cube.
-Bdd
-BddMgr::supportCube(const BddFnSet &bdds) const
-{
-  Bdd rtn(getOne());
-  for (const auto &bdd : bdds.getSet()) {
     rtn *= bdd.supportCube();
   } // for
   return rtn;
@@ -514,18 +452,9 @@ BddMgr::numRefs(BDD f) const
 
 
 //      Function : BddMgr::print
-//      Abstract : Print a BDD.
-void
-BddMgr::print(const Bdd &f) const
-{
-  _impl->print(f._me);
-} // BddMgr::print
-
-
-//      Function : BddMgr::print
 //      Abstract : Pretty print the BDD.
 void
-BddMgr::print(BDD f) const
+BddMgr::print(const BDD f) const
 {
   _impl->print(f);
 } // BddMgr::print

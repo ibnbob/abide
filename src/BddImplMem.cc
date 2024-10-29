@@ -17,16 +17,21 @@ namespace abide {
 //////////////////////////////////////////////////////////////////////////////
 
 //      Function : BddImpl::gc
-//      Abstract : Perform a garbage collection. Return the number
-//      collected nodes.
+//      Abstract : Possibly perform a garbage collection. Return the number
+//      collected nodes. Will not run if lock is set. Otherwise, runs
+//      if force is set or the number of allocated nodes id greater
+//      than the current trigger.
 unsigned int
 BddImpl::gc(bool force, bool verbose)
 {
   unsigned int nodesFreed = 0;
   static int numGCs = 0;
 
-  if (force ||
-      (_gcLock == 0 && _nodesAllocd > _gcTrigger)) {
+  if (_gcLock > 0) {
+    return 0;
+  } // if
+
+  if (force || _nodesAllocd > _gcTrigger) {
     ++numGCs;
     markReferencedNodes();
     cleanCaches(false);

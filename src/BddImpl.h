@@ -91,7 +91,7 @@ public:
   };
 
   void lockGC() { ++_gcLock; };
-  void unlockGC() { --_gcLock; };
+  void unlockGC() { if (_gcLock > 0) {--_gcLock;} };
 
   BDD getOne() const {return _oneNode; };
   BDD getZero() const {return _zeroNode; };
