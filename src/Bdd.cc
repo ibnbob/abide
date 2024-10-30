@@ -14,23 +14,35 @@ namespace abide {
 
 //      Function : BddMgr::BddMgr
 //      Abstract : Constructor.
-BddMgr::BddMgr() : BddMgr(DFLT_VAR_SZ, DFLT_CACHE_SZ)
+BddMgr::BddMgr() : BddMgr(DFLT_VAR_SZ, DFLT_NODE_SZ, DFLT_CACHE_SZ)
 {
 } // BddMgr::BddMgr
 
 
 //      Function : BddMgr::BddMgr
 //      Abstract : Constructor.
-BddMgr::BddMgr(int numVars) : BddMgr(numVars, DFLT_CACHE_SZ)
+BddMgr::BddMgr(unsigned int numVars) : BddMgr(numVars, DFLT_NODE_SZ, DFLT_CACHE_SZ)
 {
 } // BddMgr::BddMgr
 
 
 //      Function : BddMgr::BddMgr
 //      Abstract : Constructor.
-BddMgr::BddMgr(int numVars, int cacheSz)
+BddMgr::BddMgr(unsigned int numVars,
+               unsigned long maxNodes) : BddMgr(numVars, maxNodes, DFLT_CACHE_SZ)
 {
-  _impl = std::make_unique<BddImpl>(numVars, cacheSz);
+} // BddMgr::BddMgr
+
+
+//      Function : BddMgr::BddMgr
+//      Abstract : Constructor.
+BddMgr::BddMgr(unsigned int numVars,
+               unsigned long maxNodes,
+               unsigned long cacheSz)
+{
+  maxNodes = maxNodes ? maxNodes : DFLT_NODE_SZ;
+  cacheSz = cacheSz ? cacheSz : DFLT_CACHE_SZ;
+  _impl = std::make_unique<BddImpl>(numVars, maxNodes, cacheSz);
 } // BddMgr::BddMgr
 
 

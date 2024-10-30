@@ -9,15 +9,18 @@ namespace abide {
 
 //      Function : BddImpl::BddImpl
 //      Abstract : CTOR
-BddImpl::BddImpl(unsigned int numVars, unsigned int cacheSz) :
+BddImpl::BddImpl(unsigned int numVars,
+                 unsigned long maxNodes,
+                 unsigned long cacheSz) :
   _gcLock(0),
   _maxIndex(0),
   _curNodes(0),
-  _maxNodes(UINT32_MAX),
+  _maxNodes(maxNodes),
   _nodesAllocd(0),
   _maxAllocd(0),
   _nodesFree(0),
-  _gcTrigger(1<<20),
+  //_gcTrigger(std::max(1,_maxNodes>>8)),
+  _gcTrigger(std::min(1UL<<10, _maxNodes<<6)),
   _freeList(0),
   _nullNode(0),
   _oneNode(0),
@@ -53,7 +56,7 @@ BddImpl::~BddImpl()
 //      Function : BddImpl::initialize
 //      Abstract :
 void
-BddImpl::initialize(unsigned int numVars, unsigned int cacheSz)
+BddImpl::initialize(unsigned int numVars, unsigned long cacheSz)
 {
   _var2Index.resize(numVars+1);
   _index2BddVar.resize(numVars+1);

@@ -24,14 +24,17 @@ namespace abide {
 // Typedefs
 //
 namespace {
-  const unsigned int BDD_MAX_INDEX = UINT32_MAX;
 
-  const unsigned int BDD_VEC_LG_SZ = 14;
-  const unsigned int BDD_VEC_SZ = (1<<BDD_VEC_LG_SZ);
-  const unsigned int BDD_VEC_MASK = (BDD_VEC_SZ-1);
+const unsigned int BDD_MAX_INDEX = UINT32_MAX;
 
-  const int DFLT_VAR_SZ = 128;
-  const int DFLT_CACHE_SZ = (1<<20);
+const unsigned int BDD_VEC_LG_SZ = 14;
+const unsigned int BDD_VEC_SZ = (1<<BDD_VEC_LG_SZ);
+const unsigned int BDD_VEC_MASK = (BDD_VEC_SZ-1);
+
+const int DFLT_VAR_SZ = 128;
+const int DFLT_NODE_SZ = UINT32_MAX;
+const int DFLT_CACHE_SZ = (1<<20);
+
 } // anonymous namespace
 
 
@@ -40,9 +43,11 @@ namespace {
 class BddImpl {
 public:
   // BddImpl.cc
-  BddImpl(unsigned int numVars, unsigned int cacheSz);
+  BddImpl(unsigned int numVars,
+          unsigned long maxNodes,
+          unsigned long cacheSz);
   ~BddImpl();
-  void initialize(unsigned int numVars, unsigned int cacheSz);
+  void initialize(unsigned int numVars, unsigned long cacheSz);
 
   BDD getLit(BddLit lit);
   BDD getIthLit(BddIndex index);
@@ -95,7 +100,7 @@ public:
 
   BDD getOne() const {return _oneNode; };
   BDD getZero() const {return _zeroNode; };
-  BDD invert(BDD f) const { return f ^ 0x01; };
+  BDD invert(BDD f) const { return f ? f ^ 0x01 : f; };
   BDD abs(BDD f) const { return f & ~0x01; };
 
   void printStats() { _cacheStats.print(); };
@@ -299,8 +304,8 @@ private:
   UniqTbls _uniqTbls;
 
   // Computed tables.
-  unsigned int _compCacheSz;
-  unsigned int _compCacheMask;
+  unsigned long _compCacheSz;
+  unsigned long _compCacheMask;
 
   struct CacheData2 {
     BDD _f;

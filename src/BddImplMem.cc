@@ -95,7 +95,7 @@ BddImpl::reorder(bool verbose)
     if (index < _maxIndex >> 1) {
       sift_udu(index);
     } else {
-      sift_udu(index);
+      sift_dud(index);
     } // choose shorter starting direction
   } // for each var
 

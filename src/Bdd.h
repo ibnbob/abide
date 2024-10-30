@@ -48,8 +48,9 @@ using BddIndexVec = std::vector<BddIndex>;
 class BddMgr {
 public:
   BddMgr();
-  BddMgr(int numVars);
-  BddMgr(int numVars, int cacheSz);
+  BddMgr(unsigned int numVars);
+  BddMgr(unsigned int numVars, unsigned long maxNodes);
+  BddMgr(unsigned int numVars, unsigned long maxNodes, unsigned long cacheSz);
   ~BddMgr();
 
   BddMgr(const BddMgr &) = delete; // Copy CTOR

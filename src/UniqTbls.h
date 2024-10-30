@@ -36,9 +36,7 @@ public:
                unsigned int hdx);
   void putHash(BddImpl &impl,
                BDD f);
-  BDD clrHash(unsigned int hdx);
 
-  // unsigned int hash2(BDD f, BDD g) const;
   unsigned int getMask() { return _mask; };
 
   void clear(BddImpl &impl, BDDVec &nodes);

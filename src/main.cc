@@ -12,6 +12,7 @@ using std::endl;
 using namespace abide;
 
 void testMem();
+void testReorder();
 void testOps();
 void testSupport();
 void testProduct();
@@ -37,6 +38,7 @@ main()
   testProduct();
   testXor();
   testDnf();
+  testReorder();
   testMisc();
 
   return 0;
@@ -87,13 +89,13 @@ testMem()
 
       mgr.lockGC();
       mgr.lockGC();
-      VALIDATE(mgr.gc(true) == 0);
+      VALIDATE(mgr.gc(true, true) == 0);
       mgr.unlockGC();
-      VALIDATE(mgr.gc(true) == 0);
+      VALIDATE(mgr.gc(true, true) == 0);
       mgr.unlockGC();
-      VALIDATE(mgr.gc(true) == 5);
+      VALIDATE(mgr.gc(true, true) == 5);
       VALIDATE(mgr.nodesAllocd() == 16);
-      mgr.reorder();
+      mgr.reorder(true);
       VALIDATE(g.countNodes() == 7);
     } // scope 2
     mgr.gc(true);
@@ -112,6 +114,52 @@ testMem()
 
   cout << endl;
 } // testMem
+
+
+//      Function : testReorder
+//      Abstract : Test reordering on large BDDs
+void
+testReorder()
+{
+  cout << "----------------------------------------------------------------"
+       << endl;
+  cout << "Reorder Tests:" << endl;
+  cout << "----------------------------------------------------------------"
+       << endl;
+
+  BddMgr mgr(16, 163855);
+  BddVec vars;
+  const int M = 5;
+  const int N = 1 << M;
+
+  vars.push_back(Bdd());
+  for (int idx = 1; idx < N+1; ++idx) {
+    vars.push_back(mgr.getLit(idx));
+  } // for
+
+  Bdd sum = mgr.getZero();
+  for (int idx = 1; idx < (N>>1)+1; ++idx) {
+    Bdd prod = vars[idx] * vars[idx + (N>>1)];
+    sum += prod;
+  } // for
+
+  cout << "Size: " << sum.countNodes() << endl;
+  VALIDATE(sum.countNodes() == 131071);
+  VALIDATE(mgr.checkMem());
+  mgr.reorder(true);
+  cout << "Size: " << sum.countNodes() << endl;
+  VALIDATE(sum.countNodes() == 33);
+  VALIDATE(mgr.checkMem());
+
+  Bdd sum2 = mgr.getZero();
+  for (int idx = 1; idx < (N>>1)+1; ++idx) {
+    Bdd prod = vars[idx] * vars[idx + (N>>1)];
+    sum2 += prod;
+  } // for
+
+  VALIDATE(sum == sum2);
+  VALIDATE(mgr.checkMem());
+} // testReorder
 
 
 //      Function : testOps

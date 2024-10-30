@@ -150,29 +150,6 @@ UniqTbl::putHash(BddImpl &impl, const BDD f)
 } // UniqTbl::putHash
 
 
-//      Function : UniqTbl::clrHash
-//      Abstract : Set the collision chain for this index to be empty
-//      while returning the head of the current so it can be
-//      processed.
-BDD
-UniqTbl::clrHash(const unsigned int hdx)
-{
-  BDD rtn = _tbl[hdx];
-  _tbl[hdx] = 0;
-  return rtn;
-} // UniqTbl::clrHash
-
-
-// //      Function : UniqTbl::hash2
-// //      Abstract : Compute a hash value for a pair of BDDs.
-// unsigned int UniqTbl::hash2(const BDD f, const BDD g) const
-// {
-//   unsigned int rtn = ((f >> 1) ^ g ^ (f << 9) ^ (g << 5));
-//   rtn &= _mask;
-//   return rtn;
-// } // UniqTbl::hash2
-
-
 //      Function : UniqTbl::clear
 //      Abstract : Clear out the table while placing all the nodes
 //      in the given vector.
