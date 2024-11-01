@@ -35,7 +35,14 @@ BddMgr::BddMgr(unsigned int numVars,
 
 
 //      Function : BddMgr::BddMgr
-//      Abstract : Constructor.
+//      Abstract : Constructor. numVars is the initial maximum
+//      variable index. This is meant to be an estimate and will grow
+//      if more variables are requested. maxNodes is the maximum
+//      number of nodes allowed. This number may be exceeded during
+//      variable reordering but will be below at completion. All other
+//      operations should respect this. cacheSz is the size the size
+//      of the various computed caches. If it is not a power of 2,
+//      then it will be increased to the next power of two.
 BddMgr::BddMgr(unsigned int numVars,
                unsigned long maxNodes,
                unsigned long cacheSz)
@@ -176,6 +183,16 @@ BddMgr::nodesAllocd() const
 } // BddMgr::nodesAllocd
 
 
+//      Function : BddMgr::setMaxNodes
+//      Abstract : Set the maximum number of nodes allowed. Mostly for
+//      debugging and test generation.
+void
+BddMgr::setMaxNodes(unsigned long maxNodes)
+{
+  _impl->setMaxNodes(maxNodes);
+} // BddMgr::setMaxNodes
+
+
 //      Function : BddMgr::isOne
 //      Abstract : Return true if the bdd is the one function.
 bool
@@ -283,10 +300,6 @@ BddMgr::compose(BDD f, BddVar x, BDD g) const
 Bdd
 BddMgr::andExists(const Bdd f, const Bdd g, const Bdd c) const
 {
-  // Bdd rtn(_impl->andExists(f._me, g._me, c._me), this);
-  // _impl->gc(false, false);
-  // return rtn;
-
   return andExists(f._me, g._me, c._me);
 } // BddMgr::andExists
 
@@ -302,6 +315,18 @@ BddMgr::andExists(const BDD f, const BDD g, const BDD c) const
   _impl->gc(false, false);
   return rtn;
 } // BddMgr::andExists
+
+
+//      Function : BddMgr::ite
+//      Abstract : External access to ite() function. Might be useful,
+//      but mostly for unit testing.
+Bdd
+BddMgr::ite(const Bdd f, const Bdd g, const Bdd h) const
+{
+  Bdd rtn(_impl->ite(f._me, g._me, h._me), this);
+  _impl->gc(false, false);
+  return rtn;
+} // BddMgr::ite
 
 
 //      Function : BddMgr::covers

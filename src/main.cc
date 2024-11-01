@@ -15,9 +15,12 @@ void testMem();
 void testReorder();
 void testOps();
 void testSupport();
+void testAndExists();
+void testRestrict();
+void testCompose();
+void testIte();
 void testProduct();
 void testXor();
-void testAndExists();
 void testDnf();
 void testMisc();
 
@@ -32,13 +35,16 @@ int
 main()
 {
   testMem();
+  testReorder();
   testOps();
-  testAndExists();
   testSupport();
+  testAndExists();
+  testRestrict();
+  testCompose();
+  testIte();
   testProduct();
   testXor();
   testDnf();
-  testReorder();
   testMisc();
 
   return 0;
@@ -51,7 +57,7 @@ main()
 void
 testMem()
 {
-  cout << "----------------------------------------------------------------"
+  cout << "\n----------------------------------------------------------------"
        << endl;
   cout << "Memory Tests:" << endl;
   cout << "----------------------------------------------------------------"
@@ -107,6 +113,11 @@ testMem()
     cout << "cube = cubeFactor(g)\n";
 
     VALIDATE(cube == c);
+
+    Bdd one = mgr.getOne();
+    cube = one.cubeFactor();
+    cout << "cube = one.cubeFactor()\n" << endl;
+    VALIDATE(cube == one);
   } // scope 1
   VALIDATE(mgr.gc(true) == 17);
   VALIDATE(mgr.nodesAllocd() == 2);
@@ -121,7 +132,7 @@ testMem()
 void
 testReorder()
 {
-  cout << "----------------------------------------------------------------"
+  cout << "\n----------------------------------------------------------------"
        << endl;
   cout << "Reorder Tests:" << endl;
   cout << "----------------------------------------------------------------"
@@ -167,7 +178,7 @@ testReorder()
 void
 testOps()
 {
-  cout << "----------------------------------------------------------------"
+  cout << "\n----------------------------------------------------------------"
        << endl;
   cout << "Simple Op Tests:" << endl;
   cout << "----------------------------------------------------------------"
@@ -247,9 +258,9 @@ testOps()
 void
 testSupport()
 {
-  cout << "----------------------------------------------------------------"
+  cout << "\n----------------------------------------------------------------"
        << endl;
-  cout << "Test support\n";
+  cout << "Test Support\n";
   cout << "----------------------------------------------------------------"
        << endl;
   BddMgr mgr;
@@ -302,25 +313,161 @@ testAndExists()
   Bdd f = mgr.getLit(6);
   Bdd g = mgr.getLit(7);
 
-  Bdd G1 = e.xnor2(a * b);
-  Bdd G2 = f.xnor2(c + e);
-  Bdd G3 = g.xnor2(d * f);
+  {
+    Bdd G1 = e.xnor2(a * b);
+    Bdd G2 = f.xnor2(c + e);
+    Bdd G3 = g.xnor2(d * f);
 
-  cout << "G1 = e.xnor2(a * b)" << endl;
-  cout << "G2 = f.xnor2(c + e)" << endl;
-  cout << "G3 = g.xnor2(d * f)" << endl;
+    cout << "G1 = e.xnor2(a * b)" << endl;
+    cout << "G2 = f.xnor2(c + e)" << endl;
+    cout << "G3 = g.xnor2(d * f)" << endl;
 
-  Bdd H1 = g.xnor2(d*(c+(a*b)));
-  Bdd H2 = mgr.andExists(G1*G2, G3, e*f);
-  Bdd H3 = G1.andExists(G2*G3, e*f);
+    Bdd H1 = g.xnor2(d*(c+(a*b)));
+    Bdd H2 = mgr.andExists(G1*G2, G3, e*f);
+    Bdd H3 = G1.andExists(G2*G3, e*f);
 
-  cout << "H1 = g.xnor2(d*(c+(a*b)))" << endl;
-  cout << "H2 = mgr.andExists(G1*G2, G3, e*f)" << endl;
-  cout << "H3 = mgr.andExists(G1, G2*G3, e*f)" << endl;
+    cout << "H1 = g.xnor2(d*(c+(a*b)))" << endl;
+    cout << "H2 = mgr.andExists(G1*G2, G3, e*f)" << endl;
+    cout << "H3 = mgr.andExists(G1, G2*G3, e*f)" << endl;
 
-  VALIDATE(H1 == H2);
-  VALIDATE(H1 == H3);
+    VALIDATE(H1 == H2);
+    VALIDATE(H1 == H3);
+  }
+
+  Bdd F1 = (b^c^d);
+  Bdd F2 = (c^(e+f));
+  Bdd cube = a*c;
+
+  mgr.setMaxNodes(42);
+
+  Bdd F = F1.andExists(F2, cube);
+  F = F1.andExists(~F1, cube);
+
+  F1 = a + ~c;
+  F2 = ~a + b;
+  cube = c;
+  F = F1.andExists(F2, cube);
 } // testAndExists
+
+
+//      Function : testRestrict
+//      Abstract : Tickle hard to reach line of BddImplCalc.cc
+void
+testRestrict()
+{
+  cout << "\n----------------------------------------------------------------"
+       << endl;
+  cout << "Test Restrict:" << endl;
+  cout << "----------------------------------------------------------------"
+       << endl;
+
+  BddMgr mgr(16, 115); // Only allow 115 BDD nodes!
+
+  Bdd a = mgr.getLit(1);
+  Bdd b = mgr.getLit(2);
+  Bdd c = mgr.getLit(3);
+  Bdd d = mgr.getLit(4);
+
+  Bdd e = mgr.getLit(5);
+  Bdd f = mgr.getLit(6);
+  Bdd g = mgr.getLit(7);
+  Bdd h = mgr.getLit(8);
+
+  mgr.lockGC();
+  Bdd F = a*e + b*f + c*g + d*h;
+  F = a*h + b*g + c*f + d*e;
+  F = (a+e)*(b+f)*(c+g)*(d+h);
+  F = a*e + b*f + c*g + d*h;
+  mgr.unlockGC();
+
+  Bdd G = F/(g*h);
+
+  Bdd i = mgr.getLit(9);
+  Bdd j = mgr.getLit(10);
+
+  mgr.lockGC();
+  F = (a*b + ~e + c*(i^j))*((d*j)^(b+e));
+  cout << F.countNodes() << endl;
+  mgr.checkMem();
+  G = (a+e)^(c*f);
+  cout << F.countNodes() << endl;
+  mgr.checkMem();
+  mgr.unlockGC();
+
+  F.compose(d.getTopVar(), G);
+  cout << F.countNodes() << endl;
+  mgr.checkMem();
+
+} // testRestrict
+
+
+//      Function : testCompose
+//      Abstract : Tickle hard to reach line of BddImplCalc.cc
+void
+testCompose()
+{
+  cout << "\n----------------------------------------------------------------"
+       << endl;
+  cout << "Tests Compose:" << endl;
+  cout << "----------------------------------------------------------------"
+       << endl;
+
+  BddMgr mgr(16, 54); // Only allow 54 BDD nodes!
+
+  Bdd a = mgr.getLit(1);
+  Bdd b = mgr.getLit(2);
+  Bdd c = mgr.getLit(3);
+  Bdd d = mgr.getLit(4);
+
+  Bdd e = mgr.getLit(5);
+  Bdd f = mgr.getLit(6);
+  Bdd g = mgr.getLit(7);
+  Bdd h = mgr.getLit(8);
+
+  Bdd i = mgr.getLit(9);
+  Bdd j = mgr.getLit(10);
+
+  mgr.lockGC();
+  Bdd F = (a*b + ~e + c*(i^j))*((d*j)^(b+e));
+  cout << F.countNodes() << endl;
+  mgr.checkMem();
+  Bdd G = (a+e)^(c*f);
+  cout << G.countNodes() << endl;
+  mgr.checkMem();
+  mgr.unlockGC();
+
+  F = F.compose(d.getTopVar(), G);
+  cout << F.countNodes() << endl;
+  mgr.checkMem();
+
+} // testCompose
+
+
+//      Function : testIte
+//      Abstract : Provide line coverage for ite() function.
+void
+testIte()
+{
+  cout << "\n----------------------------------------------------------------"
+       << endl;
+  cout << "Tests ite:" << endl;
+  cout << "----------------------------------------------------------------"
+       << endl;
+
+  BddMgr mgr;
+
+  Bdd a = mgr.getLit(1);
+  Bdd b = mgr.getLit(2);
+  Bdd c = mgr.getLit(3);
+
+  Bdd F = a^b;
+  Bdd G = b^c;
+  Bdd H = mgr.ite(G, F, ~F);
+  cout << "F = a^b" << endl;
+  cout << "G = b^c" << endl;
+  cout << "H = mgr.ite(G, F, ~F)" << endl;
+  VALIDATE(H == (~a^c));
+} // testIte
 
 
 //      Function : testProduct
@@ -328,9 +475,9 @@ testAndExists()
 void
 testProduct()
 {
-  cout << "----------------------------------------------------------------"
+  cout << "\n----------------------------------------------------------------"
        << endl;
-  cout << "Test findProduct\n";
+  cout << "Test findProduct()\n";
   cout << "----------------------------------------------------------------"
        << endl;
   BddMgr mgr;
@@ -371,9 +518,9 @@ testProduct()
 void
 testXor()
 {
-  cout << "----------------------------------------------------------------"
+  cout << "\n----------------------------------------------------------------"
        << endl;
-  cout << "Test findXor\n";
+  cout << "Test findXor()\n";
   cout << "----------------------------------------------------------------"
        << endl;
   BddMgr mgr;
@@ -414,7 +561,7 @@ testXor()
 void
 testDnf()
 {
-  cout << "----------------------------------------------------------------"
+  cout << "\n----------------------------------------------------------------"
        << endl;
   cout << "Test extractDnf():" << endl;
   cout << "----------------------------------------------------------------"
@@ -467,9 +614,9 @@ printDnf(Dnf &dnf)
 void
 testMisc()
 {
-  cout << "----------------------------------------------------------------"
+  cout << "\n----------------------------------------------------------------"
        << endl;
-  cout << "Test miscellaneous:" << endl;
+  cout << "Test Miscellaneous:" << endl;
   cout << "----------------------------------------------------------------"
        << endl;
   BddMgr mgr(2);
@@ -517,6 +664,27 @@ testMisc()
   }
   VALIDATE(F.numRefs() == 1);
 
+  Bdd one = mgr.getOne();
+  Bdd zero = mgr.getZero();
+
+  VALIDATE(zero <= zero);
+  VALIDATE(zero <= one);
+  VALIDATE(one <= one);
+  VALIDATE(!(one <= zero));
+
+  a = mgr.getLit(1);
+  b = mgr.getLit(2);
+  c = mgr.getLit(3);
+
+  F = a*b;
+  VALIDATE(!(F <= ~F));
+  VALIDATE(F <= F);
+
+  F1 = a*b* c + ~a;
+  F2 = a*b*~c + ~a;
+  VALIDATE(!(F1 <= ~F2));
+  F = F1 * F2;
+  VALIDATE(!(F1 <= ~F2));
 
   mgr.printStats();
 } // testMisc

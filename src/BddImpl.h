@@ -63,6 +63,7 @@ public:
   BDD cubeFactor(BDD f);
   BDD supportCube(BDD f);
   BDD oneCube(BDD f);
+  BDD ite(BDD f, BDD g, BDD h);
 
   BddVarVec supportVec(BDD f);
 
@@ -103,6 +104,7 @@ public:
   BDD invert(BDD f) const { return f ? f ^ 0x01 : f; };
   BDD abs(BDD f) const { return f & ~0x01; };
 
+  void setMaxNodes(unsigned long maxNodes) {_maxNodes = std::max(_nodesAllocd,maxNodes);};
   void printStats() { _cacheStats.print(); };
 private:
   friend class UniqTbl;
@@ -174,6 +176,7 @@ private:
 
   // Allocating and freeing nodes.
   BDD allocateNode();
+  void allocateMoreNodes();
   void freeNode(BDD f);
   BDD findOrAddUniqTbl(unsigned int index,
                        BDD hi,
@@ -209,13 +212,13 @@ private:
   BDD and2(BDD f, BDD g);
   BDD xor2(BDD f, BDD g);
   BDD andConstant(BDD f, BDD g);
+  bool andConstantTerminal(BDD f, BDD g, BDD &rtn);
   BDD andExists2(BDD f, BDD g, BDD c);
   BDD andExistsTerminal(BDD f, BDD g, BDD c);
   void orderOps(BDD &f, BDD &g) {
     if (f > g) { std::swap(f, g); }
   }; // orderOps
 
-  BDD ite(BDD f, BDD g, BDD h);
   bool stdTrip(BDD &f, BDD &g, BDD &h);
   void reduceThenElse(BDD &f, BDD &g, BDD &h);
   void swapArgs(BDD &f, BDD &g, BDD &h);
@@ -233,6 +236,22 @@ private:
   unsigned int countNodes(BDD f) const;
 
   // Computed caches.
+  struct CacheData2 {
+    BDD _f;
+    BDD _g;
+    BDD _r;
+  }; // CacheData2
+  using ComputedTbl2 = std::vector<CacheData2>;
+
+  struct CacheData3 {
+    BDD _f;
+    BDD _g;
+    BDD _h;
+    BDD _r;
+  }; // CacheData3
+  using ComputedTbl3 = std::vector<CacheData3>;
+
+
   BDD getAndCache(BDD f, BDD g);
   void insertAndCache(BDD f, BDD g, BDD r);
   BDD getXorCache(BDD f, BDD g);
@@ -251,6 +270,9 @@ private:
                             BDD r);
 
   void cleanCaches(bool force);
+  void cleanCache(ComputedTbl2 &table, bool force);
+  void cleanCache(ComputedTbl3 &table, bool force);
+
   void cleanAndCache(bool force);
   void cleanXorCache(bool force);
   void cleanRestrictCache(bool force);
@@ -283,6 +305,8 @@ private:
   unsigned long _nodesFree;
   unsigned long _gcTrigger;
 
+  bool _reordering;
+
   // Managed node memory.
 #ifdef BANKEDMEM
   using BddBank = BddNode *;
@@ -307,23 +331,10 @@ private:
   unsigned long _compCacheSz;
   unsigned long _compCacheMask;
 
-  struct CacheData2 {
-    BDD _f;
-    BDD _g;
-    BDD _r;
-  }; // CacheData2
-  using ComputedTbl2 = std::vector<CacheData2>;
   ComputedTbl2 _andTbl;
   ComputedTbl2 _xorTbl;
   ComputedTbl2 _restrictTbl;
 
-  struct CacheData3 {
-    BDD _f;
-    BDD _g;
-    BDD _h;
-    BDD _r;
-  }; // CacheData3
-  using ComputedTbl3 = std::vector<CacheData3>;
   ComputedTbl3 _iteTbl;
   ComputedTbl3 _andExistTbl;
 

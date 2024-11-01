@@ -64,6 +64,7 @@ public:
   Bdd getIthLit(BddIndex) const;
 
   Bdd andExists(const Bdd f, const Bdd g, const Bdd c) const;
+  Bdd ite(const Bdd f, const Bdd g, const Bdd h) const;
 
   unsigned int countNodes(BDD f) const;
   unsigned int countNodes(const BddVec &bdds) const;
@@ -78,6 +79,7 @@ public:
 
   bool checkMem() const;
   unsigned int nodesAllocd() const;
+  void setMaxNodes(unsigned long maxNodes);
 
   void printStats();
 private:

@@ -79,21 +79,30 @@ BddImpl::restrict(BDD f, BDD c)
 BDD
 BddImpl::compose(BDD f, BddVar x, BDD g)
 {
+  BDD rtn = _nullNode;
+
   lockGC();
   BDD poslit = getLit(x);
   BDD neglit = getLit(-x);
-  BDD f1 = restrict(f, poslit);
-  BDD f0 = restrict(f, neglit);
-  BDD rtn = ite(g, f1, f0);
+  if (BDD f1 = restrict(f, poslit);
+      f1) {
+    if (BDD f0 = restrict(f, neglit);
+        f0) {
+      rtn = ite(g, f1, f0);
+    } // if f0;
+  } // if f1
   unlockGC();
+
   if (rtn == _nullNode && _gcLock == 0) {
     gc(true, false);
     lockGC();
-    poslit = getLit(x);
-    neglit = getLit(-x);
-    f1 = restrict(f, poslit);
-    f0 = restrict(f, neglit);
-    rtn = ite(g, f1, f0);
+    if (BDD f1 = restrict(f, poslit);
+        f1) {
+      if (BDD f0 = restrict(f, neglit);
+          f0) {
+        rtn = ite(g, f1, f0);
+      } // if f0;
+    } // if f1
     unlockGC();
   } // if
 
@@ -391,50 +400,6 @@ BddImpl::and2(BDD f, BDD g)
 } // BddImpl::and2
 
 
-//      Function : BddImpl::andConstant
-//      Abstract : Like and2(), but only returns constant 1, 0 or null
-//      node if not constant.
-BDD
-BddImpl::andConstant(BDD f, BDD g)
-{
-  orderOps(f, g);
-
-  // Terminal cases.
-  if (isZero(f) || isZero(g)) {
-    return _zeroNode;
-  } else if (isOne(f)) {
-    return (isOne(g)) ? _oneNode : _nullNode;
-  } else if (f == invert(g)) {
-    return _zeroNode;
-  } // if
-
-  BDD rtn = getAndCache(f, g);
-  if (!rtn) {
-    _cacheStats.incCompMiss();
-    unsigned int index = minIndex(f, g);
-    if (BDD hi = and2(restrict1(f, index),
-                      restrict1(g, index));
-        isConstant(hi)) {
-      if (BDD lo = and2(restrict0(f, index),
-                        restrict0(g, index));
-          isConstant(lo)) {
-        if (hi == lo) {
-          insertAndCache(f, g, hi);
-          return hi;
-        } else {
-          insertAndCache(f, g, _zeroNode);
-          return _zeroNode;
-        } // if
-      } // if lo
-    } // if hi
-  } else {
-    _cacheStats.incCompHit();
-  } // if
-
-  return rtn;
-} // BddImpl::andConstant
-
-
 //      Function : BddImpl::xor2
 //      Abstract : Computes f^g.
 BDD
@@ -473,6 +438,71 @@ BddImpl::xor2(BDD f, BDD g)
 
   return rtn;
 } // BddImpl::xor2
+
+
+//      Function : BddImpl::andConstant
+//      Abstract : Like and2(), but only returns constant 1, 0 or null
+//      node if not constant.
+BDD
+BddImpl::andConstant(BDD f, BDD g)
+{
+  orderOps(f, g);
+
+  BDD rtn;
+
+  if (andConstantTerminal(f, g, rtn)) {
+    return rtn;
+  } // if
+
+  rtn = getAndCache(f, g);
+  if (!rtn) {
+    _cacheStats.incCompMiss();
+    unsigned int index = minIndex(f, g);
+    if (BDD hi = andConstant(restrict1(f, index),
+                             restrict1(g, index));
+        isConstant(hi)) {
+      if (BDD lo = andConstant(restrict0(f, index),
+                               restrict0(g, index));
+          isConstant(lo)) {
+        if (hi == lo) {
+          insertAndCache(f, g, hi);
+          return hi;
+        } else {
+          return _nullNode;
+        } // if
+      } // if lo
+    } // if hi
+  } else {
+    _cacheStats.incCompHit();
+    rtn = isConstant(rtn) ? rtn : _nullNode;
+  } // if
+
+  return rtn;
+} // BddImpl::andConstant
+
+
+//      Function : BddImpl::andConstantTerminal
+//      Abstract :
+bool
+BddImpl::andConstantTerminal(BDD f, BDD g, BDD &rtn)
+{
+  // Terminal cases.
+  if (isZero(f) || isZero(g)) {
+    rtn = _zeroNode;
+    return true;
+  } else if (isOne(f)) {
+    rtn = (isOne(g)) ? _oneNode : _nullNode;
+    return true;
+  } else if (f == invert(g)) {
+    rtn = _zeroNode;
+    return true;
+  } else if (f == g) {
+    rtn = _nullNode;
+    return true;
+  } // if
+
+  return false;
+} // BddImpl::andConstantTerminal
 
 
 //      Function : BddImpl::ite
@@ -637,13 +667,17 @@ BddImpl::restrictRec(BDD f, BDD c)
     BDD c0 = restrict0(c, fdx);
 
     if (isZero(c1)) {
-      rtn = restrict(getXLo(f), c0);
+      rtn = restrictRec(getXLo(f), c0);
     } else if (isZero(c0)) {
-      rtn = restrict(getXHi(f), c1);
+      rtn = restrictRec(getXHi(f), c1);
     } else {
-      BDD r1 = restrict(getXHi(f), c);
-      BDD r0 = restrict(getXLo(f), c);
-      rtn = makeNode(fdx, r1, r0);
+      if (BDD r1 = restrictRec(getXHi(f), c);
+          r1) {
+        if (BDD r0 = restrictRec(getXLo(f), c);
+            r0) {
+          rtn = makeNode(fdx, r1, r0);
+        } // if r0
+      } // if r1
     } // if cube literal
     insertRestrictCache(f, c, rtn);
   } else {
@@ -923,105 +957,49 @@ BddImpl::insertAndExistsCache(const BDD f,
 void
 BddImpl::cleanCaches(const bool force)
 {
-  cleanAndCache(force);
-  cleanXorCache(force);
-  cleanRestrictCache(force);
-  cleanIteCache(force);
-  cleanAndExistsCache(force);
+  cleanCache(_andTbl, force);
+  cleanCache(_xorTbl, force);
+  cleanCache(_restrictTbl, force);
+  cleanCache(_iteTbl, force);
+  cleanCache(_andExistTbl, force);
 } // BddImpl::cleanCaches
 
 
-//      Function : BddImpl::cleanAndCache
-//      Abstract : Clean up the AND cache
+//      Function : BddImpl::cleanCache
+//      Abstract : Clean a computed cache.
 void
-BddImpl::cleanAndCache(bool force)
+BddImpl::cleanCache(ComputedTbl2 &table, bool force)
 {
-  for (auto &data : _andTbl) {
-    if (force ||
-        nodeUnmarked(data._f, 0) ||
-        nodeUnmarked(data._g, 0) ||
-        nodeUnmarked(data._r, 0)) {
+  for (auto &data : table) {
+    bool umF = nodeUnmarked(data._f, 0);
+    bool umG = nodeUnmarked(data._g, 0);
+    bool umR = nodeUnmarked(data._r, 0);
+    if (force || umF || umG || umR) {
       data._f = _nullNode;
       data._g = _nullNode;
       data._r = _nullNode;
     } // if
   } // for
-} // BddImpl::cleanAndCache
+} // BddImpl::cleanCache
 
 
-//      Function : BddImpl::cleanXorCache
-//      Abstract : Clean up the XOR cache
+//      Function : BddImpl::cleanCache
+//      Abstract : Clean a computed cache.
 void
-BddImpl::cleanXorCache(bool force)
+BddImpl::cleanCache(ComputedTbl3 &table, bool force)
 {
-  for (auto &data : _xorTbl) {
-    if (force ||
-        nodeUnmarked(data._f, 0) ||
-        nodeUnmarked(data._g, 0) ||
-        nodeUnmarked(data._r, 0)) {
-      data._f = _nullNode;
-      data._g = _nullNode;
-      data._r = _nullNode;
-    } // if
-  } // for
-} // BddImpl::cleanXorCache
-
-
-//      Function : BddImpl::cleanRestrictCache
-//      Abstract : Clean up the restrict cache
-void
-BddImpl::cleanRestrictCache(bool force)
-{
-  for (auto &data : _restrictTbl) {
-    if (force ||
-        nodeUnmarked(data._f, 0) ||
-        nodeUnmarked(data._g, 0) ||
-        nodeUnmarked(data._r, 0)) {
-      data._f = _nullNode;
-      data._g = _nullNode;
-      data._r = _nullNode;
-    } // if
-  } // for
-} // BddImpl::cleanRestrictCache
-
-
-//      Function : BddImpl::cleanIteCache
-//      Abstract : Clean up the ITE cache.
-void
-BddImpl::cleanIteCache(bool force)
-{
-  for (auto &data : _iteTbl) {
-    if (force ||
-        nodeUnmarked(data._f, 0) ||
-        nodeUnmarked(data._g, 0) ||
-        nodeUnmarked(data._h, 0) ||
-        nodeUnmarked(data._r, 0)) {
+  for (auto &data : table) {
+    bool umF = nodeUnmarked(data._f, 0);
+    bool umG = nodeUnmarked(data._g, 0);
+    bool umH = nodeUnmarked(data._h, 0);
+    bool umR = nodeUnmarked(data._r, 0);
+    if (force || umF || umG || umH || umR) {
       data._f = _nullNode;
       data._g = _nullNode;
       data._h = _nullNode;
       data._r = _nullNode;
     } // if
   } // for
-} // BddImpl::cleanIteCache
-
-
-//      Function : BddImpl::cleanAndExistsCache
-//      Abstract : Clean up the andExists cache.
-void
-BddImpl::cleanAndExistsCache(bool force)
-{
-  for (auto &data : _andExistTbl) {
-    if (force ||
-        nodeUnmarked(data._f, 0) ||
-        nodeUnmarked(data._g, 0) ||
-        nodeUnmarked(data._h, 0) ||
-        nodeUnmarked(data._r, 0)) {
-      data._f = _nullNode;
-      data._g = _nullNode;
-      data._h = _nullNode;
-      data._r = _nullNode;
-    } // if
-  } // for
-} // BddImpl::cleanAndExistsCache
+} // BddImpl::cleanCache
 
 } // namespace abide

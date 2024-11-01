@@ -75,6 +75,7 @@ BddImpl::reorder(bool verbose)
 {
   gc(true, verbose);
   lockGC();
+  _reordering = true;
 
   bddCntMap refs;
   auto startSize = _nodesAllocd;
@@ -100,6 +101,8 @@ BddImpl::reorder(bool verbose)
   } // for each var
 
   restoreXRefs(refs);
+
+  _reordering = false;
   unlockGC();
   cleanCaches(true);
 
@@ -127,50 +130,16 @@ BDD
 BddImpl::allocateNode()
 {
   BDD rtn = _nullNode;
+
+  if (_nodesAllocd >= _maxNodes &&
+      !_reordering) {
+    return rtn;
+  } // if
+
   if (_nodesFree == 0) {
     assert(_freeList == 0);
 
-#ifdef BANKEDMEM
-    if (_curNodes < _maxNodes) {
-      unsigned int bdx = _banks.size();
-      BddBank nuBank = new BddNode[BDD_VEC_SZ];
-      if (nuBank) {
-        _banks.push_back(nuBank);
-        _freeList = bdx << (BDD_VEC_LG_SZ + 1);
-
-        for (unsigned int idx = 1; idx < BDD_VEC_SZ; ++idx) {
-          BddNode &node(nuBank[idx-1]);
-          node.setNext(_freeList + 2*idx);
-        } // for
-
-        nuBank[BDD_VEC_SZ-1].setNext(0);
-
-        _nodesFree = BDD_VEC_SZ;
-        _curNodes += BDD_VEC_SZ;
-        // assert(_nodesFree == countFreeNodes() || _nodesAllocd == 0);
-      } // if allocated new bank of nodes
-    } // if less than max
-#else
-    if (_curNodes < _maxNodes) {
-      auto tgtSize = 2 * _curNodes;
-      tgtSize = std::max(tgtSize, 1UL<<16);
-      BddNode *nuNodes =
-        static_cast<BddNode *>(realloc(_nodes, tgtSize * sizeof(BddNode)));
-      if (nuNodes) {
-        _nodes = nuNodes;
-        _freeList = _curNodes<<1;
-        BddNode *node = _nodes + _curNodes;
-        for (auto idx = _curNodes+1; idx < tgtSize; ++idx) {
-          node->clear();
-          node->setNext(idx<<1);
-          node = _nodes + idx;
-        } // for
-        node->clear();
-        _nodesFree = tgtSize - _curNodes;
-        _curNodes = tgtSize;
-      } // if
-    } // if less than max
-#endif
+    allocateMoreNodes();
   } // if no node free
 
   if (_nodesFree) {
@@ -189,6 +158,56 @@ BddImpl::allocateNode()
 
   return rtn;
 } // BddImpl::allocateNode
+
+
+//      Function : BddImpl::allocateMoreNodes
+//      Abstract : Free list is empty. Allocate more nodes and
+//      add them to the free list.
+void
+BddImpl::allocateMoreNodes()
+{
+#ifdef BANKEDMEM
+  if (_curNodes < _maxNodes) {
+    unsigned int bdx = _banks.size();
+    BddBank nuBank = new BddNode[BDD_VEC_SZ];
+    if (nuBank) {
+      _banks.push_back(nuBank);
+      _freeList = bdx << (BDD_VEC_LG_SZ + 1);
+
+      for (unsigned int idx = 1; idx < BDD_VEC_SZ; ++idx) {
+        BddNode &node(nuBank[idx-1]);
+        node.setNext(_freeList + 2*idx);
+      } // for
+
+      nuBank[BDD_VEC_SZ-1].setNext(0);
+
+      _nodesFree = BDD_VEC_SZ;
+      _curNodes += BDD_VEC_SZ;
+      // assert(_nodesFree == countFreeNodes() || _nodesAllocd == 0);
+    } // if allocated new bank of nodes
+  } // if less than max
+#else
+  if (_curNodes < _maxNodes) {
+    auto tgtSize = 2 * _curNodes;
+    tgtSize = std::max(tgtSize, 1UL<<16);
+    BddNode *nuNodes =
+      static_cast<BddNode *>(realloc(_nodes, tgtSize * sizeof(BddNode)));
+    if (nuNodes) {
+      _nodes = nuNodes;
+      _freeList = _curNodes<<1;
+      BddNode *node = _nodes + _curNodes;
+      for (auto idx = _curNodes+1; idx < tgtSize; ++idx) {
+        node->clear();
+        node->setNext(idx<<1);
+        node = _nodes + idx;
+      } // for
+      node->clear();
+      _nodesFree = tgtSize - _curNodes;
+      _curNodes = tgtSize;
+    } // if
+  } // if less than max
+#endif
+} // BddImpl::allocateMoreNodes
 
 
 //      Function : BddImpl::freeNode
