@@ -52,7 +52,7 @@ public:
   Sudoku &operator=(Sudoku &&) = delete; // Move assignment
   void readPuzzleConstraints();
   void buildCommonConstraints();
-  void printSolution();
+  void printSolutions();
 
  private:
   using Entry = std::tuple<int, int, int>;
@@ -76,6 +76,8 @@ public:
   void buildBoxConstraints(int row, int col, int val);
 
   void buildCellConstraints();
+
+  void printSolution(Bdd cube);
 
   Bdd entryToVar(int row, int col, int val);
   Entry varToEntry(const Bdd var);
@@ -474,7 +476,7 @@ Sudoku::unpackCell(int c)
 //      Function : Sudoku::printSolution
 //      Abstract : Print one solution.
 void
-Sudoku::printSolution()
+Sudoku::printSolutions()
 {
   Bdd cube = _solution.oneCube();
 
@@ -485,6 +487,20 @@ Sudoku::printSolution()
     return;
   } // if
 
+  while (!cube.isZero()) {
+    printSolution(cube);
+    _solution *= (~cube);
+    cube = _solution.oneCube();
+    cout << endl;
+  } // while
+} // Sudoku::printSolutions
+
+
+//      Function : Sudoku::printSolution
+//      Abstract : Print the solution represented by this cube.
+void
+Sudoku::printSolution(Bdd cube)
+{
   while (!cube.isOne()) {
     Bdd hi = cube.getThen();
     Bdd lo = cube.getElse();
@@ -502,12 +518,13 @@ Sudoku::printSolution()
     } // if
   } // while
 
-  for (auto row : _grid) {
-    for (auto val : row) {
+  for (auto &row : _grid) {
+    for (auto &val : row) {
       if (val < 0) {
         cout << BOLD << RED << -val << " ";
       } else {
         cout << NORMAL << val << " ";
+        val = 0;
       } // if
     } // for
     cout << endl;
@@ -528,7 +545,7 @@ main(int argc, char *argv[])
   Sudoku sudoku(input);
   sudoku.readPuzzleConstraints();
   sudoku.buildCommonConstraints();
-  sudoku.printSolution();
+  sudoku.printSolutions();
 
   return 0;
 } // main
