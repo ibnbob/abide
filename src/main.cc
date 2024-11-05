@@ -509,6 +509,12 @@ testProduct()
   cout << "H = findProduct(f)" << endl;
   VALIDATE(H.isOne());
 
+  F = a^b^c^d;
+  H = findProduct(F);
+  cout << "F = a^b^c^d" <<endl;
+  cout << "H = findProduct(f)" << endl;
+  VALIDATE(H.isOne());
+
   cout << endl;
 } // testProduct
 

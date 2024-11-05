@@ -35,22 +35,22 @@ BddImpl::apply2(BDD f, BDD g, BddOp op)
     r = and2(f, g);
     break;
    case NAND:
-    r = invert(and2(f, g));
+    r = nand2(f, g);
     break;
    case OR:
-    r = invert(and2(invert(f), invert(g)));
+    r = or2(f, g);
     break;
    case NOR:
-    r = and2(invert(f), invert(g));
+    r = nor2(f, g);
     break;
    case XOR:
     r = xor2(f, g);
     break;
    case XNOR:
-    r = invert(xor2(f, g));
+    r = xnor2(f, g);
     break;
    case IMPL:
-    r = invert(and2(f, invert(g)));
+    r = impl2(f, g);
     break;
    default:
     assert(false);
@@ -162,7 +162,7 @@ BddImpl::andExists2(BDD f, BDD g, BDD c)
                                      restrict1(c, index));
                  hi) {
         rtn = (index == cdx)
-          ? invert(and2(invert(lo), invert(hi)))
+          ? or2(lo, hi)
           : makeNode(index, hi, lo);
         insertAndExistsCache(f, g, c, rtn);
       } // if lo is one

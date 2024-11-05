@@ -253,7 +253,6 @@ public:
     _min(min), _max(max)
   {
     assert(_min <= _max);
-    // reduceTop();
   };
   ~Interval() = default; // DTOR
 
@@ -275,34 +274,10 @@ public:
     return _min <= f && f <= _max;
   } // contains
 
-  void reduceTop();
-
 private:
   Bdd _min;
   Bdd _max;
 }; // Interval
-
-
-//      Function : Interval::reduceTop
-//      Abstract : Make sure the top variable of _min and _max are the same.
-void
-Interval::reduceTop()
-{
-  const BddMgr *mgr = _min.getMgr();
-  BddIndex iMin = _min.getIndex();
-  BddIndex iMax = _max.getIndex();
-  while (iMin != iMax) {
-    if (iMin < iMax) {
-      Bdd x = mgr->getIthLit(iMin);
-      _min = _min/x + _min/~x;
-      iMin = _min.getIndex();
-    } else {
-      Bdd x = mgr->getIthLit(iMax);
-      _max = _max/x * _max/~x;
-      iMax = _max.getIndex();
-    } // if
-  } // while
-} // Interval::reduceTop
 
 
 using DnfPair = std::pair<Bdd, Dnf>;

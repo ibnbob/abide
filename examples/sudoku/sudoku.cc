@@ -477,6 +477,14 @@ void
 Sudoku::printSolution()
 {
   Bdd cube = _solution.oneCube();
+
+  if (cube != _solution) {
+    cout << "Puzzle has multiple solutions.\n" << endl;
+  } else if (cube.isZero()) {
+    cout << BOLD << RED << "Puzzle has no solutions." << NORMAL << endl;
+    return;
+  } // if
+
   while (!cube.isOne()) {
     Bdd hi = cube.getThen();
     Bdd lo = cube.getElse();
@@ -484,8 +492,6 @@ Sudoku::printSolution()
     if (lo.isZero()) {
       Bdd var = cube.getIf();
       auto [row, col, val] = varToEntry(var);
-      assert(_grid[row][col] == 0 ||
-             _grid[row][col] == -(val+1));
       if (_grid[row][col] == 0) {
         _grid[row][col] = val+1;
       } // if
@@ -498,7 +504,6 @@ Sudoku::printSolution()
 
   for (auto row : _grid) {
     for (auto val : row) {
-      assert(val != 0);
       if (val < 0) {
         cout << BOLD << RED << -val << " ";
       } else {

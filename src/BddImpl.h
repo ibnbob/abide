@@ -210,6 +210,7 @@ private:
   void setRefs(BDD f, unsigned int r) const;
 
   BDD and2(BDD f, BDD g);
+
   BDD xor2(BDD f, BDD g);
   BDD andConstant(BDD f, BDD g);
   bool andConstantTerminal(BDD f, BDD g, BDD &rtn);
@@ -219,6 +220,13 @@ private:
     if (f > g) { std::swap(f, g); }
   }; // orderOps
 
+  BDD nand2(BDD f, BDD g) { return invert(and2(f, g)); };
+  BDD or2(BDD f, BDD g) { return invert(and2(invert(f), invert(g))); };
+  BDD nor2(BDD f, BDD g) { return and2(invert(f), invert(g)); } ;
+  BDD xnor2(BDD f, BDD g) { return invert(xor2(f, g)); };
+  BDD impl2(BDD f, BDD g) { return invert(and2(f, invert(g))); };
+
+  //ite
   bool stdTrip(BDD &f, BDD &g, BDD &h);
   void reduceThenElse(BDD &f, BDD &g, BDD &h);
   void swapArgs(BDD &f, BDD &g, BDD &h);
