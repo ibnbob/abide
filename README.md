@@ -105,8 +105,9 @@ Bdd d = mgr.getLit(3);
 
 The argument type, `BddLit`, is a signed number. The absolute value of
 the argument is the variable's _name_. Unless variable reordering is
-performed, the name is also the variable's place in the variable
-order.
+performed, a variable's place in the order independent of its name and
+is determined by when it is created. In the above example, variable 4 appears
+before variable 3 in the variable oredering because it is created first.
 
 You can also create constant functions.
 
