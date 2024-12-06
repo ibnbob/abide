@@ -58,11 +58,12 @@ BddImpl::~BddImpl()
 void
 BddImpl::initialize(unsigned int numVars, unsigned long cacheSz)
 {
-  _var2Index.resize(numVars+1);
   _index2BddVar.resize(numVars+1);
   for (unsigned int idx = 1; idx <= numVars; ++idx) {
     _var2Index[idx] = _index2BddVar[idx] = idx;
   } // for
+  _maxIndex = numVars;
+  _uniqTbls.resize(numVars+1);
 
   _compCacheSz = 1;
   while (_compCacheSz < cacheSz) {
@@ -81,19 +82,17 @@ BddImpl::initialize(unsigned int numVars, unsigned long cacheSz)
 //      Function : BddImpl::getLit
 //      Abstract : Return the BDD of the given literal.
 BDD
-BddImpl::getLit(int lit)
+BddImpl::getLit(BddLit lit)
 {
   assert(lit != 0);
 
-  unsigned int var = std::abs(lit);
-  if (var >= _var2Index.size()) {
-    unsigned int nuBddVar = _var2Index.size();
-    while (nuBddVar <= var) {
-      _var2Index.push_back(nuBddVar);
-      _index2BddVar.push_back(nuBddVar);
-      ++nuBddVar;
-    } // while
-  } // if need to extend var-index vectors.
+  BddVar var = std::abs(lit);
+  if (_var2Index.count(var) == 0) {
+    ++_maxIndex;
+    _var2Index[var] = _maxIndex;
+    _index2BddVar.push_back(var);
+    _uniqTbls.resize(var+1);
+  } // if
 
   unsigned int index = _var2Index[var];
 
@@ -108,22 +107,16 @@ BddImpl::getLit(int lit)
 //      Function : BddImpl::getIthLit
 //      Abstract : Return Bdd if the literal with the given
 //      index. Since BddIndex is unsigned, we always return the
-//      positive literal.
+//      positive literal. If index is greater than the max index, we
+//      return the null node.
 BDD
 BddImpl::getIthLit(BddIndex index)
 {
-  if (index >= _var2Index.size()) {
-    unsigned int nuBddVar = _var2Index.size();
-    while (nuBddVar <= index) {
-      _var2Index.push_back(nuBddVar);
-      _index2BddVar.push_back(nuBddVar);
-      ++nuBddVar;
-    } // while
-  } // if need to extend var-index vectors.
+  if (index > _maxIndex) {
+    return _nullNode;
+  } // if
 
-  BDD rtn(findOrAddUniqTbl(index, _oneNode, _zeroNode));
-
-  return rtn;
+  return findOrAddUniqTbl(index, _oneNode, _zeroNode);
 } // BddImpl::getIthLit
 
 

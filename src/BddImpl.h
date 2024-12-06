@@ -15,7 +15,6 @@
 
 #include <iomanip>
 #include <map>
-#include <unordered_map>
 #include <vector>
 
 namespace abide {
@@ -31,7 +30,7 @@ const unsigned int BDD_VEC_LG_SZ = 14;
 const unsigned int BDD_VEC_SZ = (1<<BDD_VEC_LG_SZ);
 const unsigned int BDD_VEC_MASK = (BDD_VEC_SZ-1);
 
-const int DFLT_VAR_SZ = 128;
+const int DFLT_VAR_SZ = 0;
 const int DFLT_NODE_SZ = UINT32_MAX;
 const int DFLT_CACHE_SZ = (1<<20);
 
@@ -300,7 +299,8 @@ private:
   //
 
   // BddVariable-index correlation.
-  std::vector<unsigned> _var2Index;
+  //std::vector<unsigned> _var2Index;
+  std::map<BddVar, BddIndex> _var2Index;
   std::vector<unsigned> _index2BddVar;
 
   // Counts

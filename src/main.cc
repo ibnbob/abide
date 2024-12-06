@@ -27,7 +27,7 @@ void testMisc();
 void printDnf(Dnf &dnf);
 void printCube(Bdd cube);
 
-#define VALIDATE(expr) cout << (expr ? "PASSED: " : "FAILED: ") << #expr << endl;
+#define VALIDATE(expr) cout << (expr ? "PASSED" : "FAILED") << " @ " << __LINE__ << ": " << #expr << endl;
 
 //      Function : main
 //      Abstract : Driver to test minimal functionality.
@@ -62,7 +62,7 @@ testMem()
   cout << "Memory Tests:" << endl;
   cout << "----------------------------------------------------------------"
        << endl;
-  BddMgr mgr;
+  BddMgr mgr(48);
 
   {
     Bdd g;
@@ -629,7 +629,10 @@ testMisc()
   Bdd a = mgr.getLit(1);
   Bdd b = mgr.getLit(2);
   Bdd c = mgr.getLit(3);
+  Bdd dummy = mgr.getLit(4);
   Bdd d = mgr.getIthLit(4);
+  Bdd bad = mgr.getIthLit(32);
+  VALIDATE(!bad.valid());
 
   VALIDATE(a.isPosLit());
   VALIDATE((~b).isNegLit());
@@ -646,7 +649,7 @@ testMisc()
   VALIDATE(F.getElse() == (b^c));
 
   F.print();
-  F = (a + b) * (c +d);
+  F = (a + b) * (c + d);
 
 
   BddFnSet fns;

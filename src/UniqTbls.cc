@@ -177,10 +177,6 @@ UniqTbls::~UniqTbls()
   for (auto &tbl : _tables) {
     tbl.freeTbl();
   } // for
-  // _uniqTbls.clear();
-  // _computedTbl.clear();
-  // _var2Index.clear();
-  // _index2BddVar.clear();
 } // UniqTbls::~UniqTbls
 
 } // namespace abide

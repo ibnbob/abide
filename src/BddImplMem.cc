@@ -237,10 +237,7 @@ BddImpl::findOrAddUniqTbl(const unsigned int index,
   assert(getIndex(lo) > index);
   BDD rtn = _nullNode;
 
-  if (index > _maxIndex) {
-    _uniqTbls.resize(index+1);
-    _maxIndex = index;
-  } // if new max index
+  assert(index <= _maxIndex);
 
   bool inv = isNegPhase(hi);
   if (inv) {
@@ -364,8 +361,9 @@ BddImpl::sift_udu(const unsigned int index)
     exchange(--jdx);
   } // while
 
-  // Update_var2index/
-  for (unsigned int idx = 0; idx < _var2Index.size(); ++idx) {
+  // Update_var2index.
+  _var2Index.clear();
+  for (unsigned int idx = 0; idx < _index2BddVar.size(); ++idx) {
     _var2Index[_index2BddVar[idx]] = idx;
   } // for
 } // BddImpl::sift_udu
