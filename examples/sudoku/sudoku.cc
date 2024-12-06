@@ -4,6 +4,7 @@
 //
 
 #include "colors.h"
+#include "Timer.h"
 #include <Bdd.h>
 #include <BddUtils.h>
 
@@ -15,6 +16,10 @@ using std::cin;
 using std::cout;
 using std::cerr;
 using std::endl;
+
+namespace {
+const int MAX_SOLUTIONS = 4;
+} // anonymous
 
 
 //      Struct   : GenConstraint
@@ -480,6 +485,7 @@ Sudoku::printSolutions()
 {
   Bdd cube = _solution.oneCube();
 
+  cout << endl;
   if (cube != _solution) {
     cout << "Puzzle has multiple solutions.\n" << endl;
   } else if (cube.isZero()) {
@@ -487,12 +493,23 @@ Sudoku::printSolutions()
     return;
   } // if
 
-  while (!cube.isZero()) {
+  int numSolutions = 0;
+  while (!cube.isZero() && numSolutions < MAX_SOLUTIONS) {
     printSolution(cube);
     _solution *= (~cube);
     cube = _solution.oneCube();
     cout << endl;
+    ++numSolutions;
   } // while
+
+  if (numSolutions > 1) {
+    if (!cube.isZero() && numSolutions >= MAX_SOLUTIONS) {
+      cout << "Printed " << numSolutions << " solutions.";
+    } else {
+      cout << "Found " << numSolutions << " solutions.";
+    } // if
+    cout << endl;
+  } // if
 } // Sudoku::printSolutions
 
 
@@ -538,6 +555,7 @@ Sudoku::printSolution(Bdd cube)
 int
 main(int argc, char *argv[])
 {
+  Timer timer("sudoku");
   std::string input;
   if (argc == 2) {
     input = argv[1];
