@@ -18,6 +18,11 @@ made some major changes:
   algorithm is used for functional composition only.
 - The reference to a BDD node is now a 32-bit integer rather than a
   pointer which is 64-bits on current architectures.
+- Only external reference counts are maintained. Garbage collection is
+  done using a mark and sweep technique. A side effect of this is that
+  garbage collection no longer occurs while processing a BDD operation.
+  If an operation fails, garbage collection is attempted and the
+  operation is retried. Nodes may also be collected after operations.
 - Several utility functions have been added that provide useful
   functionality. These are written using the external C++ interface
   and may be used as examples of coding with abide.

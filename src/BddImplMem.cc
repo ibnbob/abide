@@ -98,6 +98,7 @@ BddImpl::reorder(bool verbose)
     } else {
       sift_dud(index);
     } // choose shorter starting direction
+    assert(_nodesAllocd <= startSize);
   } // for each var
 
   restoreXRefs(refs);

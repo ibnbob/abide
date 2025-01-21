@@ -91,7 +91,7 @@ BddImpl::getLit(BddLit lit)
     ++_maxIndex;
     _var2Index[var] = _maxIndex;
     _index2BddVar.push_back(var);
-    _uniqTbls.resize(var+1);
+    _uniqTbls.resize(_maxIndex+1);
   } // if
 
   unsigned int index = _var2Index[var];
