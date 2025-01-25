@@ -106,8 +106,11 @@ private:
 
   BddVar getTopVar(BDD f) const;
   BddIndex getIndex(BDD f) const;
+
+  unsigned int supportSize(BDD f) const;
   BddVarVec supportVec(BDD f) const;
   Bdd supportCube(BDD f) const;
+
   Bdd oneCube(BDD f ) const;
 
   void incRef(BDD f) const;
@@ -179,9 +182,11 @@ public:
 
   // Cubes and support.
   Bdd cubeFactor() const;
+  Bdd oneCube() const;
+
+  unsigned int supportSize() const;
   BddVarVec supportVec() const;
   Bdd supportCube() const;
-  Bdd oneCube() const;
 
   // Data access.
   Bdd getIf() const;
@@ -456,6 +461,18 @@ inline Bdd Bdd::cubeFactor() const {
   return _mgr->cubeFactor(_me);
 } // Bdd::cubeFactor
 
+inline Bdd Bdd::oneCube() const {
+  assert(_mgr);
+
+  return _mgr->oneCube(_me);
+} // Bdd::oneCube
+
+inline unsigned int Bdd::supportSize() const {
+  assert(_mgr);
+
+  return _mgr->supportSize(_me);
+} // Bdd::supportSize
+
 inline BddVarVec Bdd::supportVec() const {
   assert(_mgr);
 
@@ -467,12 +484,6 @@ inline Bdd Bdd::supportCube() const {
 
   return _mgr->supportCube(_me);
 } // Bdd::supportCube
-
-inline Bdd Bdd::oneCube() const {
-  assert(_mgr);
-
-  return _mgr->oneCube(_me);
-} // Bdd::oneCube
 
 // Data access.
 
@@ -540,7 +551,7 @@ public:
 
   BddFnSet(const BddFnSet &) = default; // Copy CTOR
   BddFnSet &operator=(const BddFnSet &) = default; // Copy assignment
-  BddFnSet(BddFnSet &&) = delete; // Move CTOR
+  BddFnSet(BddFnSet &&) = default; // Move CTOR
   BddFnSet &operator=(BddFnSet &&) = default; // Move assignment
 
   bool insert(Bdd f);

@@ -119,7 +119,7 @@ testMem()
     cout << "cube = one.cubeFactor()\n" << endl;
     VALIDATE(cube == one);
   } // scope 1
-  VALIDATE(mgr.gc(true) == 17);
+  VALIDATE(mgr.gc(true) == 12);
   VALIDATE(mgr.nodesAllocd() == 2);
   VALIDATE(mgr.checkMem());
 
@@ -275,6 +275,10 @@ testSupport()
   Bdd F = a * (b + ~c);
   Bdd G = d ^ e ^ f ^ g;
   Bdd H = b * f + c * e + (a^g);
+
+  VALIDATE(F.supportSize() == 3);
+  VALIDATE(G.supportSize() == 4);
+  VALIDATE(H.supportSize() == 6);
 
   BddVec set1{F};
   BddVec set2{F, G};

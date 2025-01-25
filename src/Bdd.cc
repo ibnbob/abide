@@ -394,6 +394,15 @@ BddMgr::getIndex(BDD f) const
 } // BddMgr::getIndex
 
 
+//      Function : BddMgr::supportSize
+//      Abstract : Return the support of the function as vector.
+unsigned int
+BddMgr::supportSize(const BDD f) const
+{
+  return _impl->supportSize(f);
+} // BddMgr::supportSize
+
+
 //      Function : BddMgr::supportVec
 //      Abstract : Return the support of the function as vector.
 BddVarVec

@@ -308,20 +308,23 @@ BddImpl::expandFnSet(const BddIndex index, const FnSet &fns)
 } // BddImpl::expandFnSet
 
 
-//      Function : BddImpl::supportVec
-//      Abstract : Return the support of f as a vector of variables.
-BddVarVec
-BddImpl::supportVec(BDD f)
+//      Function : BddImpl::supportSize
+//      Abstract : Return the size of the support of f.
+unsigned
+BddImpl::supportSize(BDD f)
 {
-  BDD s = supportCubeRec(f);
+  BitVec supportVec;
+  supportVec.resize(_maxIndex+1, 0);
+  fillSupportVec(f, supportVec);
   unmarkNodes(f, 1);
-  BddVarVec rtn;
-  while (! isConstant(s)) {
-    rtn.push_back(getBddVar(s));
-    s = getHi(s);
-  } // while lits left
+
+  unsigned rtn = 0;
+  for (auto bit : supportVec) {
+    rtn += bit;
+  } // for
+
   return rtn;
-} // BddImpl::supportVec
+} // BddImpl::supportSize
 
 
 //      Function : BddImpl::supportCube
@@ -331,10 +334,39 @@ BddImpl::supportVec(BDD f)
 BDD
 BddImpl::supportCube(BDD f)
 {
-  BDD rtn = supportCubeRec(f);
+  BitVec supportVec;
+  supportVec.resize(_maxIndex+1, 0);
+  fillSupportVec(f, supportVec);
   unmarkNodes(f, 1);
+
+  BDD rtn = _oneNode;
+  for (BddIndex idx = _maxIndex; idx > 0; --idx) {
+    if (supportVec[idx]) {
+      rtn = makeNode(idx, rtn, _zeroNode);
+    } // if
+  } // for
   return rtn;
 } // BddImpl::supportCube
+
+
+//      Function : BddImpl::supportVec
+//      Abstract : Return the support of f as a vector of variables.
+BddVarVec
+BddImpl::supportVec(BDD f)
+{
+  BitVec supportVec;
+  supportVec.resize(_maxIndex+1, 0);
+  fillSupportVec(f, supportVec);
+  unmarkNodes(f, 1);
+
+  BddVarVec rtn;
+  for (BddIndex idx = 1; idx <= _maxIndex; ++idx) {
+    if (supportVec[idx]) {
+      rtn.push_back(_index2BddVar[idx]);
+    } // if
+  } // for
+  return rtn;
+} // BddImpl::supportVec
 
 
 //      Function : BddImpl::oneCube
@@ -724,29 +756,21 @@ BddImpl::reduce(BDD f, unsigned int tgt)
 } // BddImpl::reduce
 
 
-//      Function : BddImpl::supportCubeRec
+//      Function : BddImpl::fillSupportVec
 //      Abstract : Recursive function for finding function
-//      support as a cube.
-BDD
-BddImpl::supportCubeRec(const BDD f)
+//      support.
+void
+BddImpl::fillSupportVec(const BDD f, BitVec &suppVec)
 {
-  BDD rtn = _nullNode;
   if (isConstant(f) || nodeMarked(f, 1)) {
-    rtn = _oneNode;
+    return;
   } else {
     markNode(f, 1);
-    BDD s1 = supportCube(getHi(f));
-    if (s1) {
-      BDD s0 = supportCube(getLo(f));
-      if (s0) {
-        rtn = apply(s1, s0, AND);
-        rtn = makeNode(getIndex(f), rtn, _zeroNode);
-      } // if s0
-    } // if s1
+    suppVec[getIndex(f)] = true;
+    fillSupportVec(getHi(f), suppVec);
+    fillSupportVec(getLo(f), suppVec);
   } // if terminal or not
-
-  return rtn;
-} // BddImpl::supportCubeRec
+} // BddImpl::fillSupportVec
 
 
 //      Function : BddImpl::countNodes

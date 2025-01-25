@@ -60,10 +60,11 @@ public:
   BDD andExists(BDD f, BDD g, BDD c);
   bool covers(BDD f, BDD g);
   BDD cubeFactor(BDD f);
-  BDD supportCube(BDD f);
   BDD oneCube(BDD f);
   BDD ite(BDD f, BDD g, BDD h);
 
+  unsigned supportSize(BDD f);
+  BDD supportCube(BDD f);
   BddVarVec supportVec(BDD f);
 
   // BddImplMem.cc
@@ -239,7 +240,8 @@ private:
   BDD restrictTerminal(BDD f, BDD c);
   BDD reduce(BDD f, unsigned int tgt);
 
-  BDD supportCubeRec(const BDD f);
+  using BitVec = std::vector<bool>;
+  void fillSupportVec(BDD f, BitVec &suppVec);
   unsigned int countNodes(BDD f) const;
 
   // Computed caches.
