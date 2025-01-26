@@ -408,6 +408,8 @@ BddImpl::and2(BDD f, BDD g)
     return f;
   } else if (f == invert(g)) {
     return _zeroNode;
+  } else if (f == 0) {
+    return _nullNode;
   } // if
 
   BDD rtn = getAndCache(f, g);
@@ -448,6 +450,8 @@ BddImpl::xor2(BDD f, BDD g)
     return _zeroNode;
   } else if (f == invert(g)) {
     return _oneNode;
+  } else if (f == 0) {
+    return _nullNode;
   } // if
 
   BDD rtn = getXorCache(f, g);

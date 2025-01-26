@@ -11,7 +11,8 @@ using std::endl;
 
 using namespace abide;
 
-void testMem();
+void testMemBasic();
+void testOutOfMem();
 void testReorder();
 void testOps();
 void testSupport();
@@ -34,7 +35,8 @@ void printCube(Bdd cube);
 int
 main()
 {
-  testMem();
+  testMemBasic();
+  testOutOfMem();
   testReorder();
   testOps();
   testSupport();
@@ -51,11 +53,11 @@ main()
 } // main
 
 
-//      Function : testMem
+//      Function : testMemBasic
 //      Abstract : Test ability to create BDDs and verify expected
 //      memory usage.
 void
-testMem()
+testMemBasic()
 {
   cout << "\n----------------------------------------------------------------"
        << endl;
@@ -124,7 +126,58 @@ testMem()
   VALIDATE(mgr.checkMem());
 
   cout << endl;
-} // testMem
+} // testMemBasic
+
+
+//      Function : testOutOfMem
+//      Abstract : Test that exhausting max nodes is handled
+//      correctly.
+void
+testOutOfMem()
+{
+  cout << "\n----------------------------------------------------------------"
+       << endl;
+  cout << "Out-of-memory Tests:" << endl;
+  cout << "----------------------------------------------------------------"
+       << endl;
+
+  BddMgr mgr;
+  BddVec vars;
+  const int M = 5;
+  const int N = 1 << M;
+
+  vars.push_back(Bdd());
+  for (int idx = 1; idx < N+1; ++idx) {
+    vars.push_back(mgr.getLit(idx));
+  } // for
+
+  Bdd sum = mgr.getZero();
+  for (int idx = 1; idx < (N>>1)+1; ++idx) {
+    Bdd prod = vars[idx] * vars[idx + (N>>1)];
+    sum += prod;
+  } // for
+
+  cout << "Size: " << sum.countNodes() << endl;
+  VALIDATE(sum.countNodes() == 131071);
+
+  sum = mgr.getZero();
+  mgr.gc(true);
+  mgr.setMaxNodes(1024);
+  for (int idx = 1; idx < (N>>1)+1; ++idx) {
+    Bdd prod = vars[idx] * vars[idx + (N>>1)];
+    sum += prod;
+  } // for
+  VALIDATE(!sum.valid());
+
+  sum = mgr.getZero();
+  mgr.gc(true);
+  mgr.setMaxNodes(1024);
+  for (int idx = 1; idx < (N>>1)+1; ++idx) {
+    Bdd prod = vars[idx] * vars[idx + (N>>1)];
+    sum ^= prod;
+  } // for
+  VALIDATE(!sum.valid());
+} // testOutOfMem
 
 
 //      Function : testReorder
