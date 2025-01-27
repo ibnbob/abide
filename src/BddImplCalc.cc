@@ -688,9 +688,8 @@ BddImpl::stdNegation(BDD &f, BDD &g, BDD &h)
 BDD
 BddImpl::restrictRec(BDD f, BDD c)
 {
-  BDD rtn = restrictTerminal(f, c);
-
-  if (rtn) {
+  BDD rtn;
+  if (restrictTerminal(f, c, rtn)) {
     return rtn;
   } // if
 
@@ -726,19 +725,23 @@ BddImpl::restrictRec(BDD f, BDD c)
 
 //      Function : BddImpl::restrictTerminal
 //      Abstract : Return the result if this is a terminal case.
-BDD
-BddImpl::restrictTerminal(BDD f, BDD c)
+bool
+BddImpl::restrictTerminal(BDD f, BDD c, BDD &rtn)
 {
-  BDD rtn = _nullNode;
+  bool isTerminal = true;
   if (isOne(c) || isConstant(f)) {
     rtn = f;
   } else if (f == c) {
     rtn = _oneNode;
   } else if (f == invert(c)) {
     rtn = _zeroNode;
+  } else if (isNull(f) || isNull(c)) {
+    rtn = _nullNode;
+  } else {
+    isTerminal = false;
   } // if
 
-  return rtn;
+  return isTerminal;
 } // BddImpl::restrictTerminal
 
 

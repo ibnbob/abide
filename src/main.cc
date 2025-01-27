@@ -13,6 +13,8 @@ using namespace abide;
 
 void testMemBasic();
 void testOutOfMem();
+void testOutOfMem1();
+void testOutOfMem2();
 void testReorder();
 void testOps();
 void testSupport();
@@ -140,7 +142,16 @@ testOutOfMem()
   cout << "Out-of-memory Tests:" << endl;
   cout << "----------------------------------------------------------------"
        << endl;
+  testOutOfMem1();
+  testOutOfMem2();
+} // testOutOfMem
 
+
+//      Function : testOutOfMem1
+//      Abstract : Tests for AND and XOR.
+void
+testOutOfMem1()
+{
   BddMgr mgr;
   BddVec vars;
   const int M = 5;
@@ -177,7 +188,55 @@ testOutOfMem()
     sum ^= prod;
   } // for
   VALIDATE(!sum.valid());
-} // testOutOfMem
+} // testOutOfMem1
+
+
+//      Function : testOutOfMem2
+//      Abstract : Tests for restrict and ite.
+void
+testOutOfMem2()
+{
+  BddMgr mgr;
+  Bdd a = mgr.getLit(1);
+  Bdd b = mgr.getLit(2);
+  Bdd c = mgr.getLit(3);
+  Bdd d = mgr.getLit(4);
+  Bdd e = mgr.getLit(5);
+  Bdd f = mgr.getLit(6);
+
+  Bdd F = a*f + b*e + c*d;
+  cout << "F = a*f + b*e + c*d" << endl;
+  mgr.gc(true);
+  mgr.setMaxNodes(mgr.nodesAllocd());
+  F = F / (a * d);
+  cout << "F = F / (a * d)" << endl;
+  VALIDATE(!F.valid());
+
+  mgr.setMaxNodes(1<<20);
+  F = a*f + b*e + c*d;
+  cout << "F = a*f + b*e + c*d" << endl;
+  mgr.gc(true);
+  Bdd C = a * d;
+  cout << "C = a * d" << endl;
+  mgr.gc(true);
+  mgr.setMaxNodes(mgr.nodesAllocd()+1);
+  F = F / C;
+  cout << "F = F / C" << endl;
+  VALIDATE(!F.valid());
+
+  mgr.setMaxNodes(1<<20);
+  F = a * b + ~c;
+  Bdd G1 = b + e * f;
+  Bdd G2 = d * ~e + ~f;
+  cout << "F = a * b + ~c" << endl;
+  cout << "G1 = b + e * f" << endl;
+  cout << "G2 = d * ~e + ~f" << endl;
+  mgr.gc(true);
+  mgr.setMaxNodes(mgr.nodesAllocd()+1);
+  F = mgr.ite(F, G1, G2);
+  cout << "F = mgr.ite(F, G1, G2)" << endl;
+  VALIDATE(!F.valid());
+} // testOutOfMem2
 
 
 //      Function : testReorder

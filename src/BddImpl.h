@@ -1,6 +1,6 @@
 //
 //      File     : BddImpl.h
-//      Abstract :
+//      Abstract : Interface into BDD implementation.
 //
 
 #ifndef BDDIMPL_H
@@ -13,7 +13,6 @@
 #include "Defines.h"
 #include "UniqTbls.h"
 
-#include <iomanip>
 #include <map>
 #include <vector>
 
@@ -86,6 +85,7 @@ public:
   bool isNegLit(BDD f) const { return (getXHi(f) == _zeroNode) && (getXLo(f) == _oneNode); }
   bool isConstant(BDD f) const { return isOne(f) || isZero(f); };
   bool notConstant(BDD f) const { return ! isConstant(f); };
+  bool isNull(BDD f) const {return f == _nullNode; };
 
   BDD getThen(BDD f) const { return getXHi(f); };
   BDD getElse(BDD f) const { return getXLo(f); };
@@ -237,7 +237,7 @@ private:
   BDD makeNode(unsigned int index, BDD hi, BDD lo);
 
   BDD restrictRec(BDD f, BDD c);
-  BDD restrictTerminal(BDD f, BDD c);
+  bool restrictTerminal(BDD f, BDD c, BDD &rtn);
   BDD reduce(BDD f, unsigned int tgt);
 
   using BitVec = std::vector<bool>;
