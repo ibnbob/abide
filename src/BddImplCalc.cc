@@ -14,10 +14,13 @@ namespace abide {
 BDD
 BddImpl::apply(BDD f, BDD g, BddOp op)
 {
-  BDD rtn = apply2(f, g, op);
-  if (rtn == _nullNode && _gcLock == 0) {
-    gc(true, false);
-    rtn = apply2(f, g, op);
+  BDD rtn = _nullNode;
+  if (!isNull(f) && !isNull(g)) {
+     rtn = apply2(f, g, op);
+     if (isNull(rtn) && _gcLock == 0) {
+       gc(true, false);
+       rtn = apply2(f, g, op);
+     } // if
   } // if
 
   return rtn;
@@ -65,7 +68,7 @@ BDD
 BddImpl::restrict(BDD f, BDD c)
 {
   BDD rtn = restrictRec(f, c);
-  if (rtn == _nullNode && _gcLock == 0) {
+  if (isNull(rtn) && _gcLock == 0) {
     gc(true, false);
     rtn = restrictRec(f, c);
   } // if
@@ -93,7 +96,7 @@ BddImpl::compose(BDD f, BddVar x, BDD g)
   } // if f1
   unlockGC();
 
-  if (rtn == _nullNode && _gcLock == 0) {
+  if (isNull(rtn) && _gcLock == 0) {
     gc(true, false);
     lockGC();
     if (BDD f1 = restrict(f, poslit);
@@ -119,7 +122,7 @@ BddImpl::andExists(const BDD f, const BDD g, const BDD c)
   BDD rtn = andExists2(f, g, c);
   unlockGC();
 
-  if (rtn == _nullNode && _gcLock == 0) {
+  if (isNull(rtn) && _gcLock == 0) {
     gc(true, false);
     rtn = andExists2(f, g, c);
   } // if
@@ -408,8 +411,6 @@ BddImpl::and2(BDD f, BDD g)
     return f;
   } else if (f == invert(g)) {
     return _zeroNode;
-  } else if (f == 0) {
-    return _nullNode;
   } // if
 
   BDD rtn = getAndCache(f, g);
@@ -450,8 +451,6 @@ BddImpl::xor2(BDD f, BDD g)
     return _zeroNode;
   } else if (f == invert(g)) {
     return _oneNode;
-  } else if (f == 0) {
-    return _nullNode;
   } // if
 
   BDD rtn = getXorCache(f, g);
