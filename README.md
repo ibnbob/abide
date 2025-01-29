@@ -12,7 +12,7 @@ Bryant [^BRB] with Rudell's sifting algorithm added for variable
 reordering [^Rud]. Beginning in 2024, I revisited the code and have
 made some major changes:
 
-- Large portions have been rewritten in C++.
+- All code has converted to C++.
 - The _ite()_ algorithm has been largely replaced by dedicated
   algorithms for computing the _and_ and _xor_ functions. The _ite()_
   algorithm is used for functional composition only.
@@ -34,7 +34,7 @@ made some major changes:
 - Also, there are three less useful example programs which may be
   instructional.
   - An n-queens solver.
-  - An application with reads a form of the ISCAS-85 benchmarks and
+  - An application which reads a form of the ISCAS-85 benchmarks and
     builds BDDs for each gate.
   - A Sudoku solver.
 
@@ -47,7 +47,7 @@ at the same time while BuDDy has a single, global manager.  Both abide
 and BuDDy represent edges as 32-bit integers. In CUDD, edges are
 pointers which require 64 bits on modern architectures. This means
 that the size of a node structure is smaller in abide and BuDDy: 20
-bytes versus 32 bytes in CUDD. Both abide and CUDD us complemented
+bytes versus 32 bytes in CUDD. Both abide and CUDD use complemented
 edges to represent the negation of a function.  Using complemented
 edges allows function inversion to be done on $O(1)$ time instead of
 $O(n)$ time. It also results in smaller BDDs with fewer nodes. Below

@@ -29,10 +29,11 @@ const unsigned int BDD_VEC_LG_SZ = 14;
 const unsigned int BDD_VEC_SZ = (1<<BDD_VEC_LG_SZ);
 const unsigned int BDD_VEC_MASK = (BDD_VEC_SZ-1);
 
-const int DFLT_VAR_SZ = 0;
-const int DFLT_NODE_SZ = UINT32_MAX;
-const int DFLT_CACHE_SZ = (1<<20);
+const unsigned int DFLT_VAR_SZ = 0;
+const unsigned long DFLT_NODE_SZ = UINT32_MAX;
+const unsigned long DFLT_CACHE_SZ = (1<<20);
 
+const double DFLT_REORDER_GROWTH_FACTOR = 1.25;
 } // anonymous namespace
 
 
@@ -191,7 +192,9 @@ private:
   using bddCntMap = std::map<BDD, unsigned int>;
   unsigned int getNextBddVar();
   unsigned long maxSize(unsigned long startSz) {
-    return std::min(startSz + (startSz>>1), _maxNodes);
+    unsigned long maxSz = startSz * DFLT_REORDER_GROWTH_FACTOR;
+    return std::min(maxSz, _maxNodes);
+    //return std::min(startSz + (startSz>>1), _maxNodes);
   } // maxSize
   void sift_udu(unsigned int index);
   void sift_dud(unsigned int index);
