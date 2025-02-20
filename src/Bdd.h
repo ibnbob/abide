@@ -194,7 +194,7 @@ public:
   Bdd getElse() const;
   BddVar getTopVar() const;
   BddIndex getIndex() const;
-  unsigned int getId() const;
+  BDD getId() const;
 
   // Debug.
   unsigned int countNodes() const;
