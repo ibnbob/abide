@@ -156,6 +156,15 @@ BddMgr::reorder(bool verbose) const
 } // BddMgr::reorder
 
 
+//      Function : BddMgr::getVarOrder
+//      Abstract : Return the ordering of the current BddVars
+const BddVarVec &
+BddMgr::getVarOrder() const
+{
+  return _impl->getVarOrder();
+} // BddMgr::getVarOrder
+
+
 //      Function : BddMgr::checkMem
 //      Abstract : Perform a simple check of the memory state.
 bool

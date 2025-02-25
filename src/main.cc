@@ -78,6 +78,12 @@ testMemBasic()
     Bdd e = mgr.getLit(50);
     Bdd f = mgr.getLit(60);
 
+    const BddVarVec &order = mgr.getVarOrder();
+    VALIDATE(order[10] == 10);
+    VALIDATE(order[40] == 40);
+    VALIDATE(order[49] == 50);
+    VALIDATE(order[50] == 60);
+
     {
       Bdd g0 = b + ~c;
       Bdd g1 = a + b + ~c;

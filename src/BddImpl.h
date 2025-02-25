@@ -71,6 +71,8 @@ public:
   unsigned int gc(bool force, bool verbose);
   unsigned int reorder(bool verbose);
 
+  const BddVarVec &getVarOrder() const { return _index2BddVar; };
+
   bool checkMem() const;
   unsigned nodesAllocd() const { return _nodesAllocd; };
 
@@ -306,7 +308,7 @@ private:
   // BddVariable-index correlation.
   //std::vector<unsigned> _var2Index;
   std::map<BddVar, BddIndex> _var2Index;
-  std::vector<unsigned> _index2BddVar;
+  BddVarVec _index2BddVar;
 
   // Counts
   unsigned int _gcLock;

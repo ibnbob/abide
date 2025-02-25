@@ -76,6 +76,7 @@ public:
   void unlockGC() const;
   unsigned int gc(bool force = false, bool verbose = false) const;
   unsigned int reorder(bool verbose = false) const;
+  const BddVarVec &getVarOrder() const;
 
   bool checkMem() const;
   unsigned int nodesAllocd() const;
