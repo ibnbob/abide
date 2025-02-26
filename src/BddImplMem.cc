@@ -73,7 +73,7 @@ BddImpl::gc(bool force, bool verbose)
 unsigned int
 BddImpl::reorder(bool verbose)
 {
-  gc(true, verbose);
+  gc(true, false);
   lockGC();
   _reordering = true;
 
