@@ -1,5 +1,5 @@
 #! /usr/bin/bash
-make clean all debug
+make basic
 test_out=$(mktemp TEST.OUT.XXXX)
 if ./bdd_test-g > $test_out; then
     if ! grep FAILED $test_out; then

@@ -22,16 +22,15 @@ namespace abide {
 // Typedefs
 //
 namespace {
+const uint32_t BDD_MAX_INDEX = UINT32_MAX;
 
-const unsigned int BDD_MAX_INDEX = UINT32_MAX;
+const size_t BDD_VEC_LG_SZ = 14;
+const size_t BDD_VEC_SZ = (1<<BDD_VEC_LG_SZ);
+const size_t BDD_VEC_MASK = (BDD_VEC_SZ-1);
 
-const unsigned int BDD_VEC_LG_SZ = 14;
-const unsigned int BDD_VEC_SZ = (1<<BDD_VEC_LG_SZ);
-const unsigned int BDD_VEC_MASK = (BDD_VEC_SZ-1);
-
-const unsigned int DFLT_VAR_SZ = 0;
-const unsigned long DFLT_NODE_SZ = UINT32_MAX;
-const unsigned long DFLT_CACHE_SZ = (1<<20);
+const size_t DFLT_VAR_SZ = 0;
+const size_t DFLT_NODE_SZ = UINT32_MAX;
+const size_t DFLT_CACHE_SZ = (1<<20);
 
 const double DFLT_REORDER_GROWTH_FACTOR = 1.25;
 } // anonymous namespace
@@ -40,17 +39,17 @@ const double DFLT_REORDER_GROWTH_FACTOR = 1.25;
 //      Class    : BddImpl
 //      Abstract : Class for managing memory for BDDs.
 class BddImpl {
-public:
+ public:
   // BddImpl.cc
-  BddImpl(unsigned int numVars,
-          unsigned long maxNodes,
-          unsigned long cacheSz);
+  BddImpl(size_t numVars,
+          size_t maxNodes,
+          size_t cacheSz);
   ~BddImpl();
-  void initialize(unsigned int numVars, unsigned long cacheSz);
+  void initialize(size_t numVars, size_t cacheSz);
 
   BDD getLit(BddLit lit);
   BDD getIthLit(BddIndex index);
-  unsigned int countNodes(BDDVec &bdds) const;
+  size_t countNodes(BDDVec &bdds) const;
   void print(BDD f) const;
 
   // BddImplCalc.cc
@@ -63,23 +62,24 @@ public:
   BDD oneCube(BDD f);
   BDD ite(BDD f, BDD g, BDD h);
 
-  unsigned supportSize(BDD f);
+  size_t supportSize(BDD f);
   BDD supportCube(BDD f);
   BddVarVec supportVec(BDD f);
 
   // BddImplMem.cc
-  unsigned int gc(bool force, bool verbose);
-  unsigned int reorder(bool verbose);
+  size_t gc(bool force, bool verbose);
+  size_t reorder(bool verbose);
 
   const BddVarVec &getVarOrder() const { return _index2BddVar; };
 
   bool checkMem() const;
-  unsigned nodesAllocd() const { return _nodesAllocd; };
+  size_t nodesAllocd() const { return _nodesAllocd; };
+  size_t varsCreated() const { return _maxIndex; };
 
   void incRef(BDD F) const;
   void decRef(BDD F) const;
-  unsigned int numRefs(BDD f) const;
-  unsigned int countFreeNodes() const;
+  size_t numRefs(BDD f) const;
+  size_t countFreeNodes() const;
 
   // Inline
   bool isOne(BDD f) const { return f == _oneNode; };
@@ -107,9 +107,9 @@ public:
   BDD invert(BDD f) const { return f ? f ^ 0x01 : f; };
   BDD abs(BDD f) const { return f & ~0x01; };
 
-  void setMaxNodes(unsigned long maxNodes) {_maxNodes = std::max(_nodesAllocd,maxNodes);};
+  void setMaxNodes(size_t maxNodes) {_maxNodes = std::max(_nodesAllocd,maxNodes);};
   void printStats() { _cacheStats.print(); };
-private:
+ private:
   friend class UniqTbl;
   BDD apply2(BDD f, BDD g, BddOp op);
 
@@ -126,7 +126,7 @@ private:
   // Interface from type BDD type to type BddNode.
   bool isNegPhase(BDD f) const { return f & 0x01; };
   bool isPosPhase(BDD f) const { return !(f & 0x01); };
-  unsigned int getBddVar(BDD f) const {
+  BddVar getBddVar(BDD f) const {
     BddNode &n = getNode(f);
     return _index2BddVar[n.getIndex()];
   };
@@ -152,19 +152,19 @@ private:
     BddNode &n = getNode(f);
     return n.getNext();
   };
-  void markNode(BDD f, unsigned int m) const {
+  void markNode(BDD f, uint32_t m) const {
     BddNode &n = getNode(f);
     n.setMark(m);
   };
-  void unmarkNode(BDD f, unsigned int m) const {
+  void unmarkNode(BDD f, uint32_t m) const {
     BddNode &n = getNode(f);
     n.clrMark(m);
   };
-  bool nodeMarked(BDD f, unsigned int m) const {
+  bool nodeMarked(BDD f, uint32_t m) const {
     BddNode &n = getNode(f);
     return n.marked(m);
   };
-  bool nodeUnmarked(BDD f, unsigned int m) const {
+  bool nodeUnmarked(BDD f, uint32_t m) const {
     BddNode &n = getNode(f);
     return ! n.marked(m);
   };
@@ -181,30 +181,30 @@ private:
   BDD allocateNode();
   void allocateMoreNodes();
   void freeNode(BDD f);
-  BDD findOrAddUniqTbl(unsigned int index,
+  BDD findOrAddUniqTbl(BddIndex index,
                        BDD hi,
                        BDD lo);
 
   void markReferencedNodes();
   // Avoid using m=0 unless gc is locked.
-  void markNodes(BDD f, unsigned int m) const;
-  void unmarkNodes(BDD f, unsigned int m) const;
+  void markNodes(BDD f, uint32_t m) const;
+  void unmarkNodes(BDD f, uint32_t m) const;
 
   // Reordering.
-  using bddCntMap = std::map<BDD, unsigned int>;
-  unsigned int getNextBddVar();
-  unsigned long maxSize(unsigned long startSz) {
-    unsigned long maxSz = startSz * DFLT_REORDER_GROWTH_FACTOR;
+  using bddCntMap = std::map<BDD, size_t>;
+  BddIndex getNextBddVar();
+  size_t maxSize(size_t startSz) {
+    size_t maxSz = startSz * DFLT_REORDER_GROWTH_FACTOR;
     return std::min(maxSz, _maxNodes);
     //return std::min(startSz + (startSz>>1), _maxNodes);
   } // maxSize
-  void sift_udu(unsigned int index);
-  void sift_dud(unsigned int index);
-  long exchange(unsigned int index);
+  void sift_udu(BddIndex index);
+  void sift_dud(BddIndex index);
+  long exchange(BddIndex index);
 
-  void demote(const BDDVec &nodes, unsigned int index);
-  void swapCofactors(const BDDVec &nodes, unsigned int index);
-  void promote(const BDDVec &nodes, unsigned int index);
+  void demote(const BDDVec &nodes, BddIndex index);
+  void swapCofactors(const BDDVec &nodes, BddIndex index);
+  void promote(const BDDVec &nodes, BddIndex index);
 
   void saveXRefs(bddCntMap &refs);
   void calcTRefs(const bddCntMap &refs);
@@ -212,7 +212,7 @@ private:
   void calcTRefs(BDD f);
   void decTRefs(BDD f);
   void incTRefs(BDD f);
-  void setRefs(BDD f, unsigned int r) const;
+  void setRefs(BDD f, uint32_t r) const;
 
   BDD and2(BDD f, BDD g);
 
@@ -239,15 +239,15 @@ private:
   void condSwapNeg(BDD &f, BDD &g);
   bool stdNegation(BDD &f, BDD &g, BDD &h);
 
-  BDD makeNode(unsigned int index, BDD hi, BDD lo);
+  BDD makeNode(BddIndex index, BDD hi, BDD lo);
 
   BDD restrictRec(BDD f, BDD c);
   bool restrictTerminal(BDD f, BDD c, BDD &rtn);
-  BDD reduce(BDD f, unsigned int tgt);
+  BDD reduce(BDD f, BddIndex tgt);
 
   using BitVec = std::vector<bool>;
   void fillSupportVec(BDD f, BitVec &suppVec);
-  unsigned int countNodes(BDD f) const;
+  size_t countNodes(BDD f) const;
 
   // Computed caches.
   struct CacheData2 {
@@ -293,32 +293,31 @@ private:
   void cleanIteCache(bool force);
   void cleanAndExistsCache(bool force);
 
-  unsigned int index(BDD f) const;
-  unsigned int minIndex(BDD f, BDD g) const;
-  unsigned int minIndex(BDD f, BDD g, BDD h) const;
-  BDD restrict1(BDD f, unsigned int index) const;
-  BDD restrict0(BDD f, unsigned int index) const;
+  BddIndex index(BDD f) const;
+  BddIndex minIndex(BDD f, BDD g) const;
+  BddIndex minIndex(BDD f, BDD g, BDD h) const;
+  BDD restrict1(BDD f, BddIndex index) const;
+  BDD restrict0(BDD f, BddIndex index) const;
 
-  void printRec(BDD f, unsigned int level) const;
+  void printRec(BDD f, size_t level) const;
 
   //
   // Data Members.
   //
 
   // BddVariable-index correlation.
-  //std::vector<unsigned> _var2Index;
   std::map<BddVar, BddIndex> _var2Index;
   BddVarVec _index2BddVar;
 
   // Counts
-  unsigned int _gcLock;
-  unsigned int _maxIndex;
-  unsigned long _curNodes;
-  unsigned long _maxNodes;
-  unsigned long _nodesAllocd;
-  unsigned long _maxAllocd;
-  unsigned long _nodesFree;
-  unsigned long _gcTrigger;
+  size_t _gcLock;
+  size_t _maxIndex;
+  size_t _curNodes;
+  size_t _maxNodes;
+  size_t _nodesAllocd;
+  size_t _maxAllocd;
+  size_t _nodesFree;
+  size_t _gcTrigger;
 
   bool _reordering;
 
@@ -343,8 +342,8 @@ private:
   UniqTbls _uniqTbls;
 
   // Computed tables.
-  unsigned long _compCacheSz;
-  unsigned long _compCacheMask;
+  size_t _compCacheSz;
+  size_t _compCacheMask;
 
   ComputedTbl2 _andTbl;
   ComputedTbl2 _xorTbl;
@@ -365,7 +364,7 @@ BddImpl::getNode(BDD i) const
 {
 #ifdef BANKEDMEM
   i = i>>1;
-  unsigned bdx = i >> BDD_VEC_LG_SZ;
+  size_t bdx = i >> BDD_VEC_LG_SZ;
   i &= BDD_VEC_MASK;
   BddBank bank = _banks[bdx];
   return bank[i];
@@ -383,7 +382,7 @@ BddImpl::getNodePtr(BDD i) const
 {
 #ifdef BANKEDMEM
   i = i>>1;
-  unsigned bdx = i >> BDD_VEC_LG_SZ;
+  size_t bdx = i >> BDD_VEC_LG_SZ;
   i &= BDD_VEC_MASK;
   BddBank bank = _banks[bdx];
   return bank+i;
@@ -397,7 +396,7 @@ BddImpl::getNodePtr(BDD i) const
 //      Function : BddImpl::makeNode
 //      Abstract : Make a new BDD node if necessary.
 inline BDD
-BddImpl::makeNode(unsigned int index, BDD hi, BDD lo)
+BddImpl::makeNode(BddIndex index, BDD hi, BDD lo)
 {
   BDD rtn = _nullNode;
   if (hi != lo) {
@@ -412,7 +411,7 @@ BddImpl::makeNode(unsigned int index, BDD hi, BDD lo)
 
 //      Function : BddImpl::minIndex
 //      Abstract : Return the minimum index of f, g and h.
-inline unsigned int
+inline BddIndex
 BddImpl::minIndex(const BDD f, const BDD g) const
 {
   return std::min(index(f), index(g));
@@ -421,7 +420,7 @@ BddImpl::minIndex(const BDD f, const BDD g) const
 
 //      Function : BddImpl::minIndex
 //      Abstract : Return the minimum index of f, g and h.
-inline unsigned int
+inline BddIndex
 BddImpl::minIndex(const BDD f, const BDD g, const BDD h) const
 {
   return std::min(index(f), std::min(index(g), index(h)));
@@ -431,9 +430,9 @@ BddImpl::minIndex(const BDD f, const BDD g, const BDD h) const
 //      Function : BddImpl::restrict1
 //      Abstract : Restrict f to idx. Assumes index(f) >= idx.
 inline BDD
-BddImpl::restrict1(const BDD f, const unsigned int idx) const
+BddImpl::restrict1(const BDD f, const BddIndex idx) const
 {
-  unsigned int myIdx = index(f);
+  BddIndex myIdx = index(f);
   assert(myIdx >= idx);
   return (myIdx != idx) ? f : getXHi(f);
 } // restrict1
@@ -442,9 +441,9 @@ BddImpl::restrict1(const BDD f, const unsigned int idx) const
 //      Function : BddImpl::restrict0
 //      Abstract : Restrict f to !idx. Assumes index(f) >= idx.
 inline BDD
-BddImpl::restrict0(BDD f, unsigned int idx) const
+BddImpl::restrict0(BDD f, BddIndex idx) const
 {
-  unsigned int myIdx = index(f);
+  BddIndex myIdx = index(f);
   assert(myIdx >= idx);
   return (myIdx != idx) ? f : getXLo(f);
 } // restrict0
@@ -453,21 +452,21 @@ BddImpl::restrict0(BDD f, unsigned int idx) const
 ///////////////////////////////////////////////////////////////////////////////////////
 // Simple hash functions.
 //
-inline unsigned int hash2(unsigned int a,
-                          unsigned int b) {
-  unsigned int rtn = ((a >> 1) ^ b ^ (a << 9) ^ (b << 5));
+inline uint32_t hash2(uint32_t a,
+                      uint32_t b) {
+  uint32_t rtn = ((a >> 1) ^ b ^ (a << 9) ^ (b << 5));
   return rtn;
 } // hash2
 
-inline unsigned int hash3(unsigned int a,
-                          unsigned int b,
-                          unsigned int c) {
-  unsigned int rtn = ((a >> 5) ^
-                      (b >> 2) ^
-                      (c << 1) ^
-                      (a << 4) ^
-                      (b << 7) ^
-                      (c << 10));
+inline uint32_t hash3(uint32_t a,
+                      uint32_t b,
+                      uint32_t c) {
+  uint32_t rtn = ((a >> 5) ^
+                  (b >> 2) ^
+                  (c << 1) ^
+                  (a << 4) ^
+                  (b << 7) ^
+                  (c << 10));
 
   return rtn;
 } // hash3

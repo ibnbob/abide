@@ -77,6 +77,7 @@ testMemBasic()
     Bdd d = mgr.getLit(30);
     Bdd e = mgr.getLit(50);
     Bdd f = mgr.getLit(60);
+    VALIDATE(mgr.varsCreated() == 50);
 
     const BddVarVec &order = mgr.getVarOrder();
     VALIDATE(order[10] == 10);

@@ -47,13 +47,13 @@ struct CacheStats {
   void print() {};
 #endif
 
-private:
-  unsigned long _uniqAccess = 0;
-  unsigned long _uniqChain = 0;
-  unsigned long _uniqHit = 0;
-  unsigned long _uniqMiss = 0;
-  unsigned long _compHit = 0;
-  unsigned long _compMiss = 0;
+ private:
+  size_t _uniqAccess = 0;
+  size_t _uniqChain = 0;
+  size_t _uniqHit = 0;
+  size_t _uniqMiss = 0;
+  size_t _compHit = 0;
+  size_t _compMiss = 0;
 }; // struct CacheStats
 
 #endif // CACHESTATS_H

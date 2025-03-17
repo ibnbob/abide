@@ -21,15 +21,15 @@ BddMgr::BddMgr() : BddMgr(DFLT_VAR_SZ, DFLT_NODE_SZ, DFLT_CACHE_SZ)
 
 //      Function : BddMgr::BddMgr
 //      Abstract : Constructor.
-BddMgr::BddMgr(unsigned int numVars) : BddMgr(numVars, DFLT_NODE_SZ, DFLT_CACHE_SZ)
+BddMgr::BddMgr(size_t numVars) : BddMgr(numVars, DFLT_NODE_SZ, DFLT_CACHE_SZ)
 {
 } // BddMgr::BddMgr
 
 
 //      Function : BddMgr::BddMgr
 //      Abstract : Constructor.
-BddMgr::BddMgr(unsigned int numVars,
-               unsigned long maxNodes) : BddMgr(numVars, maxNodes, DFLT_CACHE_SZ)
+BddMgr::BddMgr(size_t numVars,
+               size_t maxNodes) : BddMgr(numVars, maxNodes, DFLT_CACHE_SZ)
 {
 } // BddMgr::BddMgr
 
@@ -43,9 +43,9 @@ BddMgr::BddMgr(unsigned int numVars,
 //      operations should respect this. cacheSz is the size the size
 //      of the various computed caches. If it is not a power of 2,
 //      then it will be increased to the next power of two.
-BddMgr::BddMgr(unsigned int numVars,
-               unsigned long maxNodes,
-               unsigned long cacheSz)
+BddMgr::BddMgr(size_t numVars,
+               size_t maxNodes,
+               size_t cacheSz)
 {
   maxNodes = maxNodes ? maxNodes : DFLT_NODE_SZ;
   cacheSz = cacheSz ? cacheSz : DFLT_CACHE_SZ;
@@ -140,7 +140,7 @@ BddMgr::unlockGC() const
 
 //      Function : BddMgr::gc
 //      Abstract : Force a garbage collection.
-unsigned int
+size_t
 BddMgr::gc(bool force, bool verbose) const
 {
   return _impl->gc(force, verbose);
@@ -149,7 +149,7 @@ BddMgr::gc(bool force, bool verbose) const
 
 //      Function : BddMgr::reorder
 //      Abstract : Force a variable reordering.
-unsigned int
+size_t
 BddMgr::reorder(bool verbose) const
 {
   return _impl->reorder(verbose);
@@ -185,18 +185,27 @@ BddMgr::printStats()
 
 //      Function : BddMgr::nodesAllocd
 //      Abstract : Return the number of nodes allocated.
-unsigned int
+size_t
 BddMgr::nodesAllocd() const
 {
   return _impl->nodesAllocd();
 } // BddMgr::nodesAllocd
 
 
+//      Function : BddMgr::varsCreated
+//      Abstract : Return the number of variables created.
+size_t
+BddMgr::varsCreated() const
+{
+  return _impl->varsCreated();
+} // BddMgr::varsCreated
+
+
 //      Function : BddMgr::setMaxNodes
 //      Abstract : Set the maximum number of nodes allowed. Mostly for
 //      debugging and test generation.
 void
-BddMgr::setMaxNodes(unsigned long maxNodes)
+BddMgr::setMaxNodes(size_t maxNodes)
 {
   _impl->setMaxNodes(maxNodes);
 } // BddMgr::setMaxNodes
@@ -405,7 +414,7 @@ BddMgr::getIndex(BDD f) const
 
 //      Function : BddMgr::supportSize
 //      Abstract : Return the support of the function as vector.
-unsigned int
+size_t
 BddMgr::supportSize(const BDD f) const
 {
   return _impl->supportSize(f);
@@ -441,7 +450,7 @@ BddMgr::oneCube(const BDD f ) const
 
 //      Function : BddMgr::countNodes
 //      Abstract : Count the number of nodes in the BDD rooted here.
-unsigned int
+size_t
 BddMgr::countNodes(const BDD f) const
 {
   BDDVec v;
@@ -454,7 +463,7 @@ BddMgr::countNodes(const BDD f) const
 //      Function : BddMgr::countNodes
 //      Abstract : Count the number of nodes in the rooted at the BDDs
 //      in the vector.
-unsigned int
+size_t
 BddMgr::countNodes(const BddVec &bdds) const
 {
   BDDVec v;
@@ -499,7 +508,7 @@ BddMgr::decRef(BDD f) const
 
 //      Function : BddMgr::numRefs
 //      Abstract : Get the number of external refs.
-unsigned int
+size_t
 BddMgr::numRefs(BDD f) const
 {
   return _impl->numRefs(f);

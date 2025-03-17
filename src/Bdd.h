@@ -22,7 +22,7 @@ class BddImpl;
 class Bdd;
 class BddFnSet;
 
-// Internal representaion of a BDD node is an unsigned int.
+// Internal representaion of a BDD node is a 32-bit unsigned int.
 using BDD = uint32_t;
 using BDDVec = std::vector<BDD>;
 
@@ -46,11 +46,11 @@ using BddIndexVec = std::vector<BddIndex>;
 //      Class    : BddMgr
 //      Abstract : Manager for BDD memory and operations.
 class BddMgr {
-public:
+ public:
   BddMgr();
-  BddMgr(unsigned int numVars);
-  BddMgr(unsigned int numVars, unsigned long maxNodes);
-  BddMgr(unsigned int numVars, unsigned long maxNodes, unsigned long cacheSz);
+  BddMgr(size_t numVars);
+  BddMgr(size_t numVars, size_t maxNodes);
+  BddMgr(size_t numVars, size_t maxNodes, size_t cacheSz);
   ~BddMgr();
 
   BddMgr(const BddMgr &) = delete; // Copy CTOR
@@ -66,24 +66,25 @@ public:
   Bdd andExists(const Bdd f, const Bdd g, const Bdd c) const;
   Bdd ite(const Bdd f, const Bdd g, const Bdd h) const;
 
-  unsigned int countNodes(BDD f) const;
-  unsigned int countNodes(const BddVec &bdds) const;
+  size_t countNodes(BDD f) const;
+  size_t countNodes(const BddVec &bdds) const;
 
   Bdd supportCube(const BddVec &bdds) const;
   BddVarVec supportVec(const BddVec &bdds) const;
 
   void lockGC() const;
   void unlockGC() const;
-  unsigned int gc(bool force = false, bool verbose = false) const;
-  unsigned int reorder(bool verbose = false) const;
+  size_t gc(bool force = false, bool verbose = false) const;
+  size_t reorder(bool verbose = false) const;
   const BddVarVec &getVarOrder() const;
 
   bool checkMem() const;
-  unsigned int nodesAllocd() const;
-  void setMaxNodes(unsigned long maxNodes);
+  size_t nodesAllocd() const;
+  size_t varsCreated() const;
+  void setMaxNodes(size_t maxNodes);
 
   void printStats();
-private:
+ private:
   friend class Bdd;
 
   bool isOne(const Bdd &f) const;
@@ -108,7 +109,7 @@ private:
   BddVar getTopVar(BDD f) const;
   BddIndex getIndex(BDD f) const;
 
-  unsigned int supportSize(BDD f) const;
+  size_t supportSize(BDD f) const;
   BddVarVec supportVec(BDD f) const;
   Bdd supportCube(BDD f) const;
 
@@ -116,7 +117,7 @@ private:
 
   void incRef(BDD f) const;
   void decRef(BDD f) const;
-  unsigned int numRefs(BDD f) const;
+  size_t numRefs(BDD f) const;
   void print(BDD f) const;
 
   // Class Data
@@ -127,7 +128,7 @@ private:
 //      Class    : Bdd
 //      Abstract : Bdd class. Used to represent a single boolean function.
 class Bdd {
-public:
+ public:
   Bdd() : _mgr(0), _me(0) {};
   ~Bdd() { decRef(); };
 
@@ -185,7 +186,7 @@ public:
   Bdd cubeFactor() const;
   Bdd oneCube() const;
 
-  unsigned int supportSize() const;
+  size_t supportSize() const;
   BddVarVec supportVec() const;
   Bdd supportCube() const;
 
@@ -198,10 +199,10 @@ public:
   BDD getId() const;
 
   // Debug.
-  unsigned int countNodes() const;
-  unsigned int numRefs() const;
+  size_t countNodes() const;
+  size_t numRefs() const;
   void print() const;
-private:
+ private:
   friend class BddMgr;
   friend class BddFnSet;
 
@@ -468,7 +469,7 @@ inline Bdd Bdd::oneCube() const {
   return _mgr->oneCube(_me);
 } // Bdd::oneCube
 
-inline unsigned int Bdd::supportSize() const {
+inline size_t Bdd::supportSize() const {
   assert(_mgr);
 
   return _mgr->supportSize(_me);
@@ -518,7 +519,7 @@ inline BddVar Bdd::getIndex() const {
   return _mgr->getIndex(_me);
 } // Bdd::getIndex
 
-inline unsigned int Bdd::getId() const {
+inline BDD Bdd::getId() const {
   assert(_mgr);
 
   return _me;
@@ -526,13 +527,13 @@ inline unsigned int Bdd::getId() const {
 
 // Debug.
 
-inline unsigned int Bdd::countNodes() const {
+inline size_t Bdd::countNodes() const {
   assert(_mgr);
 
   return _mgr->countNodes(_me);
 } // Bdd::countNodes
 
-inline unsigned int Bdd::numRefs() const
+inline size_t Bdd::numRefs() const
 {
   assert(_mgr);
 
@@ -546,7 +547,7 @@ inline unsigned int Bdd::numRefs() const
 //      are inserted into a BddFnSet, only the first insertion will
 //      succeed.
 class BddFnSet {
-public:
+ public:
   BddFnSet() : _mgr(nullptr) {}; // CTOR
   ~BddFnSet() {}; // DTOR
 
@@ -576,7 +577,7 @@ public:
   const Set &getSet() const {return _bddSet;}
   auto begin() { return _bddSet.begin(); };
   auto end() { return _bddSet.end(); };
-private:
+ private:
   friend class BddMgr;
   friend Bdd findProduct(BddFnSet &fnSet);
 

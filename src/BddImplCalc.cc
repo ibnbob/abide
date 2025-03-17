@@ -16,11 +16,11 @@ BddImpl::apply(BDD f, BDD g, BddOp op)
 {
   BDD rtn = _nullNode;
   if (!isNull(f) && !isNull(g)) {
-     rtn = apply2(f, g, op);
-     if (isNull(rtn) && _gcLock == 0) {
-       gc(true, false);
-       rtn = apply2(f, g, op);
-     } // if
+    rtn = apply2(f, g, op);
+    if (isNull(rtn) && _gcLock == 0) {
+      gc(true, false);
+      rtn = apply2(f, g, op);
+    } // if
   } // if
 
   return rtn;
@@ -147,8 +147,8 @@ BddImpl::andExists2(BDD f, BDD g, BDD c)
   rtn = getAndExistsCache(f, g, c);
   if (!rtn) {
     _cacheStats.incCompMiss();
-    unsigned int index = minIndex(f, g);
-    unsigned int cdx = getIndex(c);
+    BddIndex index = minIndex(f, g);
+    BddIndex cdx = getIndex(c);
     while (cdx < index) {
       c = getHi(c);
       cdx = getIndex(c);
@@ -244,14 +244,14 @@ BddImpl::cubeFactor(BddIndexVec &indices, const FnSet &fns)
     rtn = cubeFactor(indices, nuSet);
 
     switch (unateness) {
-      case POS:
-        rtn = makeNode(index, rtn, _zeroNode);
-        break;
-      case NEG:
-        rtn = makeNode(index, _zeroNode, rtn);
+     case POS:
+      rtn = makeNode(index, rtn, _zeroNode);
       break;
-      case BINATE:
-        break;
+     case NEG:
+      rtn = makeNode(index, _zeroNode, rtn);
+      break;
+     case BINATE:
+      break;
     } // switch
   } // if
 
@@ -313,7 +313,7 @@ BddImpl::expandFnSet(const BddIndex index, const FnSet &fns)
 
 //      Function : BddImpl::supportSize
 //      Abstract : Return the size of the support of f.
-unsigned
+size_t
 BddImpl::supportSize(BDD f)
 {
   BitVec supportVec;
@@ -321,7 +321,7 @@ BddImpl::supportSize(BDD f)
   fillSupportVec(f, supportVec);
   unmarkNodes(f, 1);
 
-  unsigned rtn = 0;
+  size_t rtn = 0;
   for (auto bit : supportVec) {
     rtn += bit;
   } // for
@@ -416,7 +416,7 @@ BddImpl::and2(BDD f, BDD g)
   BDD rtn = getAndCache(f, g);
   if (!rtn) {
     _cacheStats.incCompMiss();
-    unsigned int index = minIndex(f, g);
+    BddIndex index = minIndex(f, g);
     if (BDD hi = and2(restrict1(f, index),
                       restrict1(g, index));
         hi) {
@@ -456,7 +456,7 @@ BddImpl::xor2(BDD f, BDD g)
   BDD rtn = getXorCache(f, g);
   if (!rtn) {
     _cacheStats.incCompMiss();
-    unsigned int index = minIndex(f, g);
+    BddIndex index = minIndex(f, g);
     if (BDD hi = xor2(restrict1(f, index),
                       restrict1(g, index));
         hi) {
@@ -492,7 +492,7 @@ BddImpl::andConstant(BDD f, BDD g)
   rtn = getAndCache(f, g);
   if (!rtn) {
     _cacheStats.incCompMiss();
-    unsigned int index = minIndex(f, g);
+    BddIndex index = minIndex(f, g);
     if (BDD hi = andConstant(restrict1(f, index),
                              restrict1(g, index));
         isConstant(hi)) {
@@ -561,7 +561,7 @@ BddImpl::ite(BDD f, BDD g, BDD h)
     rtn = getIteCache(f, g, h);
     if (! rtn) {
       _cacheStats.incCompMiss();
-      unsigned int index = minIndex(f, g, h);
+      BddIndex index = minIndex(f, g, h);
       BDD hi = ite(restrict1(f, index),
                    restrict1(g, index),
                    restrict1(h, index));
@@ -695,7 +695,7 @@ BddImpl::restrictRec(BDD f, BDD c)
   rtn = getRestrictCache(f, c);
   if (! rtn) {
     _cacheStats.incCompMiss();
-    unsigned int fdx = getIndex(f);
+    BddIndex fdx = getIndex(f);
     c = reduce(c, fdx);
     BDD c1 = restrict1(c, fdx);
     BDD c0 = restrict0(c, fdx);
@@ -748,12 +748,12 @@ BddImpl::restrictTerminal(BDD f, BDD c, BDD &rtn)
 //      Abstract : While the top variable of c is greater than tgt,
 //      perform or-smoothing on it.
 BDD
-BddImpl::reduce(BDD f, unsigned int tgt)
+BddImpl::reduce(BDD f, BddIndex tgt)
 {
-  unsigned int idx = getIndex(f);
+  BddIndex idx = getIndex(f);
   while (idx < tgt) {
-    unsigned int f1 = getXHi(f);
-    unsigned int f0 = getXLo(f);
+    BddIndex f1 = getXHi(f);
+    BddIndex f0 = getXLo(f);
     f = apply2(f1, f0, OR);
     idx = getIndex(f);
   } // while
@@ -782,10 +782,10 @@ BddImpl::fillSupportVec(const BDD f, BitVec &suppVec)
 //      Function : BddImpl::countNodes
 //      Abstract : Count the number of nodes rooted at this node. Uses
 //      mark 1 to record previousy visited nodes.
-unsigned int
+size_t
 BddImpl::countNodes(const BDD f) const
 {
-  unsigned int count = 0;
+  size_t count = 0;
   if (nodeUnmarked(f, 1)) {
     markNode(f, 1);
     if (! isConstant(f)) {
@@ -801,7 +801,7 @@ BddImpl::countNodes(const BDD f) const
 
 //      Function : BddImpl::index
 //      Abstract : Get the index of this BDD.
-unsigned int
+BddIndex
 BddImpl::index(const BDD f) const
 {
   BddNode &n = getNode(f);

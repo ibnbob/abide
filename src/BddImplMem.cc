@@ -21,10 +21,10 @@ namespace abide {
 //      collected nodes. Will not run if lock is set. Otherwise, runs
 //      if force is set or the number of allocated nodes id greater
 //      than the current trigger.
-unsigned int
+size_t
 BddImpl::gc(bool force, bool verbose)
 {
-  unsigned int nodesFreed = 0;
+  size_t nodesFreed = 0;
   static int numGCs = 0;
 
   if (_gcLock > 0) {
@@ -58,8 +58,8 @@ BddImpl::gc(bool force, bool verbose)
 
     if (verbose) {
       std::cout << "Garbage Collection #" << numGCs << ": "
-           << _nodesAllocd << " : " << nodesFreed
-           << std::endl;
+                << _nodesAllocd << " : " << nodesFreed
+                << std::endl;
     } // if
   } // if unlocked for gc
 
@@ -70,7 +70,7 @@ BddImpl::gc(bool force, bool verbose)
 //      Function : BddImpl::reorder
 //      Abstract : Reorder variables using Rick Rudell's sifting
 //      algorithm.
-unsigned int
+size_t
 BddImpl::reorder(bool verbose)
 {
   gc(true, false);
@@ -169,13 +169,13 @@ BddImpl::allocateMoreNodes()
 {
 #ifdef BANKEDMEM
   if (_curNodes < _maxNodes) {
-    unsigned int bdx = _banks.size();
+    size_t bdx = _banks.size();
     BddBank nuBank = new BddNode[BDD_VEC_SZ];
     if (nuBank) {
       _banks.push_back(nuBank);
       _freeList = bdx << (BDD_VEC_LG_SZ + 1);
 
-      for (unsigned int idx = 1; idx < BDD_VEC_SZ; ++idx) {
+      for (size_t idx = 1; idx < BDD_VEC_SZ; ++idx) {
         BddNode &node(nuBank[idx-1]);
         node.setNext(_freeList + 2*idx);
       } // for
@@ -229,7 +229,7 @@ BddImpl::freeNode(const BDD f)
 //      Function : BddImpl::findOrAddUniqTbl
 //      Abstract : Abstract : Find a node in or add a node to the unique table.
 BDD
-BddImpl::findOrAddUniqTbl(const unsigned int index,
+BddImpl::findOrAddUniqTbl(const BddIndex index,
                           BDD hi,
                           BDD lo)
 {
@@ -261,7 +261,7 @@ void
 BddImpl::markReferencedNodes()
 {
   for (const auto &tbl : _uniqTbls) {
-    for (unsigned int hdx = 0; hdx < tbl.size(); ++hdx) {
+    for (size_t hdx = 0; hdx < tbl.size(); ++hdx) {
       BDD f = tbl.getHash(hdx);
       while (f) {
         if (numRefs(f) > 0) {
@@ -277,7 +277,7 @@ BddImpl::markReferencedNodes()
 //      Function : BddImpl::markNodes
 //      Abstract : Recursively mark nodes rooted at this node.
 void
-BddImpl::markNodes(const BDD f, unsigned int m) const
+BddImpl::markNodes(const BDD f, uint32_t m) const
 {
   if (f > 3) {
     BddNode &node = getNode(f);
@@ -293,7 +293,7 @@ BddImpl::markNodes(const BDD f, unsigned int m) const
 //      Function : BddImpl::unmarkNodes
 //      Abstract : Recursively unmark nodes rooted at this node.
 void
-BddImpl::unmarkNodes(const BDD f, unsigned int m) const
+BddImpl::unmarkNodes(const BDD f, uint32_t m) const
 {
   BddNode &node = getNode(f);
   if (node.marked(m)) {
@@ -308,12 +308,12 @@ BddImpl::unmarkNodes(const BDD f, unsigned int m) const
 
 //      Function : BddImpl::getNextBddVar
 //      Abstract : Find the unprocessed level with the most nodes.
-unsigned int
+BddIndex
 BddImpl::getNextBddVar()
 {
-  unsigned int rtn = 0;
-  unsigned int worst = 0;
-  unsigned int idx = 0;
+  BddIndex rtn = 0;
+  BddIndex worst = 0;
+  BddIndex idx = 0;
   for (const auto &tbl : _uniqTbls) {
     if (!tbl.processed() && tbl.numNodes() > worst) {
       worst = tbl.numNodes();
@@ -331,11 +331,11 @@ BddImpl::getNextBddVar()
 //      to the top, then to the bottom and back up to the minimal
 //      position.
 void
-BddImpl::sift_udu(const unsigned int index)
+BddImpl::sift_udu(const BddIndex index)
 {
-  unsigned long startSz = _nodesAllocd;
-  unsigned long maxSz = maxSize(startSz);
-  unsigned int jdx = index;
+  size_t startSz = _nodesAllocd;
+  size_t maxSz = maxSize(startSz);
+  BddIndex jdx = index;
   while (jdx > 1 && _nodesAllocd < maxSz) {
     exchange(--jdx);
   } // while not at top
@@ -345,7 +345,7 @@ BddImpl::sift_udu(const unsigned int index)
   // (good) delta or not.
   long delta = exchange(jdx++);
   long best = delta < 0 ? delta : 0;
-  unsigned int bestIndex = delta < 0 ? jdx : jdx-1;
+  BddIndex bestIndex = delta < 0 ? jdx : jdx-1;
 
   // Move to the bottom and record best position. The best position
   // is the one with the mode negative delta.
@@ -364,7 +364,7 @@ BddImpl::sift_udu(const unsigned int index)
 
   // Update_var2index.
   _var2Index.clear();
-  for (unsigned int idx = 0; idx < _index2BddVar.size(); ++idx) {
+  for (BddIndex idx = 0; idx < _index2BddVar.size(); ++idx) {
     _var2Index[_index2BddVar[idx]] = idx;
   } // for
 } // BddImpl::sift_udu
@@ -375,11 +375,11 @@ BddImpl::sift_udu(const unsigned int index)
 //      to the top, then to the bottom and back up to the minimal
 //      position.
 void
-BddImpl::sift_dud(const unsigned int index)
+BddImpl::sift_dud(const BddIndex index)
 {
-  unsigned long startSz = _nodesAllocd;
-  unsigned long maxSz = maxSize(startSz);
-  unsigned int jdx = index;
+  size_t startSz = _nodesAllocd;
+  size_t maxSz = maxSize(startSz);
+  BddIndex jdx = index;
   while (jdx < _maxIndex && _nodesAllocd < maxSz) {
     exchange(jdx++);
   } // while not at top
@@ -389,7 +389,7 @@ BddImpl::sift_dud(const unsigned int index)
   // (good) delta or not.
   long delta = exchange(--jdx);
   long best = delta < 0 ? delta : 0;
-  unsigned int bestIndex = delta < 0 ? jdx : jdx+1;
+  BddIndex bestIndex = delta < 0 ? jdx : jdx+1;
 
   // Move to the top and record best position. The best position
   // is the one with the mode negative delta.
@@ -407,7 +407,7 @@ BddImpl::sift_dud(const unsigned int index)
   } // while
 
   // Update_var2index/
-  for (unsigned int idx = 0; idx < _var2Index.size(); ++idx) {
+  for (BddIndex idx = 0; idx < _var2Index.size(); ++idx) {
     _var2Index[_index2BddVar[idx]] = idx;
   } // for
 } // BddImpl::sift_dud
@@ -416,7 +416,7 @@ BddImpl::sift_dud(const unsigned int index)
 //      Function : BddImpl::exchange
 //      Abstract : Exchange index with index+1. Return the delta in nodes.
 long
-BddImpl::exchange(const unsigned int index)
+BddImpl::exchange(const BddIndex index)
 {
   std::swap(_index2BddVar[index], _index2BddVar[index+1]);
   UniqTbl &tbl1 = _uniqTbls[index];
@@ -448,7 +448,7 @@ BddImpl::exchange(const unsigned int index)
 //      have indices greater than idx+1, then make the node's index
 //      idx+1.
 void
-BddImpl::demote(const BDDVec &nodes, const unsigned int idx)
+BddImpl::demote(const BDDVec &nodes, const BddIndex idx)
 {
   UniqTbl &tbl = _uniqTbls[idx+1];
   for (const auto f : nodes) {
@@ -458,7 +458,7 @@ BddImpl::demote(const BDDVec &nodes, const unsigned int idx)
       BDD f0 = node.getLo();
       if (getIndex(f0) > idx+1) {
         node.setIndex(idx+1);
-        unsigned int h = hash2(f1, f0) & tbl.getMask();
+        size_t h = hash2(f1, f0) & tbl.getMask();
         tbl.putHash(*this, f, h);
       } // if f0
     } // if f1
@@ -473,7 +473,7 @@ BddImpl::demote(const BDDVec &nodes, const unsigned int idx)
 //      counts of f1 and f0. If they become zero, then they will be
 //      freed by the promote function.
 void
-BddImpl::swapCofactors(const BDDVec &nodes, const unsigned int idx)
+BddImpl::swapCofactors(const BDDVec &nodes, const BddIndex idx)
 {
   UniqTbl &tbl1 = _uniqTbls[idx];
   for (const auto f : nodes) {
@@ -534,7 +534,7 @@ BddImpl::swapCofactors(const BDDVec &nodes, const unsigned int idx)
 //      references, then change its index from i to i+1.  Otw, free
 //      the node.
 void
-BddImpl::promote(const BDDVec &nodes, const unsigned int idx)
+BddImpl::promote(const BDDVec &nodes, const BddIndex idx)
 {
   UniqTbl &tbl = _uniqTbls[idx];
   for (const auto f : nodes) {
@@ -556,7 +556,7 @@ void
 BddImpl::saveXRefs(bddCntMap &refs)
 {
   for (const auto &tbl : _uniqTbls) {
-    for (unsigned int hdx = 0; hdx < tbl.size(); ++hdx) {
+    for (size_t hdx = 0; hdx < tbl.size(); ++hdx) {
       BDD f = tbl.getHash(hdx);
       while (f) {
         if (numRefs(f) > 0) {
@@ -592,7 +592,7 @@ void
 BddImpl::restoreXRefs(bddCntMap &refs)
 {
   for (const auto &tbl : _uniqTbls) {
-    for (unsigned int hdx = 0; hdx < tbl.size(); ++hdx) {
+    for (size_t hdx = 0; hdx < tbl.size(); ++hdx) {
       BDD f = tbl.getHash(hdx);
       while (f) {
         setRefs(f, (refs.count(f) ? refs[f] : 0));
@@ -660,7 +660,7 @@ BddImpl::checkMem() const
   std::printf("\tmax allocated = %ld\n", _maxAllocd);
   std::printf("\tnodes allocated = %ld\n", _nodesAllocd);
   std::printf("\tnodes free = %ld\n", _nodesFree);
-  std::printf("\tnodes in free list = %d\n", countFreeNodes());
+  std::printf("\tnodes in free list = %ld\n", countFreeNodes());
   std::printf("\tnodes in mem = %ld\n", _curNodes);
 
   return ((_nodesFree + _nodesAllocd) == _curNodes);
@@ -670,7 +670,7 @@ BddImpl::checkMem() const
 //      Function : BddImpl::setRefs
 //      Abstract : Set the number of external references of f.
 void
-BddImpl::setRefs(const BDD f, const unsigned int n) const
+BddImpl::setRefs(const BDD f, const uint32_t n) const
 {
   BddNode &node = getNode(f);
   node.setRefs(n);
@@ -702,7 +702,7 @@ BddImpl::decRef(BDD f) const
 
 //      Function : BddImpl::numRefs
 //      Abstract : Get the number of references to this node.
-unsigned int
+size_t
 BddImpl::numRefs(BDD f) const
 {
   BddNode &n = getNode(f);
@@ -712,10 +712,10 @@ BddImpl::numRefs(BDD f) const
 
 //      Function : BddImpl::countFreeNodes
 //      Abstract : Count the nodes in the free list.
-unsigned int
+size_t
 BddImpl::countFreeNodes() const
 {
-  unsigned int cnt = 0;
+  size_t cnt = 0;
   BDD b = _freeList;
   while (b) {
     ++cnt;

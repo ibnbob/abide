@@ -246,7 +246,7 @@ findXor(const Bdd &f)
 //      Abstract : Holds an incompletely specified function as an
 //      interval.
 class Interval {
-public:
+ public:
   Interval(Bdd f) : // CTOR
     _min(f), _max(f) {};
   Interval(Bdd min, Bdd max) : // CTOR
@@ -274,7 +274,7 @@ public:
     return _min <= f && f <= _max;
   } // contains
 
-private:
+ private:
   Bdd _min;
   Bdd _max;
 }; // Interval

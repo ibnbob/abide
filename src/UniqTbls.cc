@@ -8,10 +8,10 @@
 namespace abide {
 
 namespace {
-  const unsigned int UNIQ_LG_SZ = 12;
-  const unsigned int UNIQ_INIT_SZ = 1 << UNIQ_LG_SZ;
-  const unsigned int UNIQ_LD_FACTOR = 1;
-  const unsigned int UNIQ_LG_GROWTH_FACTOR = 2;
+const size_t UNIQ_LG_SZ = 12;
+const size_t UNIQ_INIT_SZ = 1 << UNIQ_LG_SZ;
+const size_t UNIQ_LD_FACTOR = 1;
+const size_t UNIQ_LG_GROWTH_FACTOR = 2;
 } // anonymous namespace
 
 //      Function : UniqTbl::UniqTbl
@@ -24,7 +24,7 @@ UniqTbl::UniqTbl() :
   _processed(false)
 {
   _tbl = new BDD[_size];
-  for (unsigned int idx = 0; idx < _size; ++idx) {
+  for (size_t idx = 0; idx < _size; ++idx) {
     _tbl[idx] = 0;
   } // zero-out mem
 } // UniqTbl::UniqTbl
@@ -39,7 +39,7 @@ UniqTbl::findOrAdd(BddImpl &impl,
                    const BDD lo)
 {
   BDD rtn = 0;
-  unsigned int hash = hash2(hi, lo) & _mask;
+  uint32_t hash = hash2(hi, lo) & _mask;
   BDD cur;
   BDD next;
 
@@ -87,17 +87,17 @@ UniqTbl::resize(BddImpl &impl)
 {
   //cout << "Resizing utable." << endl;
   BDD *oldTbl = _tbl;
-  unsigned int oldSize = _size;
+  size_t oldSize = _size;
 
   _size = _size << UNIQ_LG_GROWTH_FACTOR;
   _mask = _size - 1;
   _tbl = new BDD[_size];
 
-  for (unsigned int idx = 0; idx < _size; ++idx) {
+  for (size_t idx = 0; idx < _size; ++idx) {
     _tbl[idx] = 0;
   } // zero-out mem
 
-  for (unsigned int idx = 0; idx < oldSize; ++idx) {
+  for (size_t idx = 0; idx < oldSize; ++idx) {
     BDD f = oldTbl[idx];
     BDD next;
 
@@ -115,7 +115,7 @@ UniqTbl::resize(BddImpl &impl)
 //      Function : UniqTbl::getHash
 //      Abstract : Get the first node in the collision chain for this
 //      hash index.
-BDD UniqTbl::getHash(const unsigned int hdx) const
+BDD UniqTbl::getHash(const size_t hdx) const
 {
   return _tbl[hdx];
 }; // getHash
@@ -126,8 +126,8 @@ BDD UniqTbl::getHash(const unsigned int hdx) const
 //      hash index.
 void
 UniqTbl::putHash(BddImpl &impl,
-                          const BDD f,
-                          const unsigned int hdx)
+                 const BDD f,
+                 const size_t hdx)
 {
   BddNode &node = impl.getNode(f);
   node.setNext(_tbl[hdx]);
@@ -142,11 +142,11 @@ UniqTbl::putHash(BddImpl &impl,
 void
 UniqTbl::putHash(BddImpl &impl, const BDD f)
 {
-    BddNode &node = impl.getNode(f);
-    unsigned int hdx = hash2(node.getHi(), node.getLo()) & _mask;
-    node.setNext(_tbl[hdx]);
-    _tbl[hdx] = f;
-    _numNodes++;
+  BddNode &node = impl.getNode(f);
+  uint32_t hdx = hash2(node.getHi(), node.getLo()) & _mask;
+  node.setNext(_tbl[hdx]);
+  _tbl[hdx] = f;
+  _numNodes++;
 } // UniqTbl::putHash
 
 
@@ -157,7 +157,7 @@ void
 UniqTbl::clear(BddImpl &impl, BDDVec &nodes)
 {
   nodes.reserve(_numNodes);
-  for (unsigned int hdx = 0; hdx < _size; ++hdx) {
+  for (size_t hdx = 0; hdx < _size; ++hdx) {
     BDD f = _tbl[hdx];
     while (f) {
       nodes.push_back(f);

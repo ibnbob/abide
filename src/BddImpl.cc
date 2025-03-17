@@ -9,9 +9,9 @@ namespace abide {
 
 //      Function : BddImpl::BddImpl
 //      Abstract : CTOR
-BddImpl::BddImpl(unsigned int numVars,
-                 unsigned long maxNodes,
-                 unsigned long cacheSz) :
+BddImpl::BddImpl(size_t numVars,
+                 size_t maxNodes,
+                 size_t cacheSz) :
   _gcLock(0),
   _maxIndex(0),
   _curNodes(0),
@@ -56,10 +56,10 @@ BddImpl::~BddImpl()
 //      Function : BddImpl::initialize
 //      Abstract :
 void
-BddImpl::initialize(unsigned int numVars, unsigned long cacheSz)
+BddImpl::initialize(size_t numVars, size_t cacheSz)
 {
   _index2BddVar.resize(numVars+1);
-  for (unsigned int idx = 1; idx <= numVars; ++idx) {
+  for (size_t idx = 1; idx <= numVars; ++idx) {
     _var2Index[idx] = _index2BddVar[idx] = idx;
   } // for
   _maxIndex = numVars;
@@ -94,7 +94,7 @@ BddImpl::getLit(BddLit lit)
     _uniqTbls.resize(_maxIndex+1);
   } // if
 
-  unsigned int index = _var2Index[var];
+  BddIndex index = _var2Index[var];
 
   BDD rtn(lit > 0 ?
           findOrAddUniqTbl(index, _oneNode, _zeroNode) :
@@ -106,7 +106,7 @@ BddImpl::getLit(BddLit lit)
 
 //      Function : BddImpl::getIthLit
 //      Abstract : Return Bdd if the literal with the given
-//      index. Since BddIndex is unsigned, we always return the
+//      index. Since BddIndex is not signed, we always return the
 //      positive literal. If index is greater than the max index, we
 //      return the null node.
 BDD
@@ -123,10 +123,10 @@ BddImpl::getIthLit(BddIndex index)
 //      Function : BddImpl::countNodes
 //      Abstract : Count the number of nodes in the rooted at the BDDs
 //      in the vector.
-unsigned int
+size_t
 BddImpl::countNodes(BDDVec &bdds) const
 {
-  unsigned int count = 0;
+  size_t count = 0;
 
   for (const auto bdd : bdds) {
     count += countNodes(bdd);
@@ -154,7 +154,7 @@ BddImpl::print(BDD f) const
 //      Function : BddImpl::printRec
 //      Abstract : Recursive helper function for print().
 void
-BddImpl::printRec(const BDD f, const unsigned int level) const
+BddImpl::printRec(const BDD f, const size_t level) const
 {
   std::cout << std::string(2*level, ' ');
   if (isZero(f)) {
@@ -162,13 +162,13 @@ BddImpl::printRec(const BDD f, const unsigned int level) const
   } else if (isOne(f)) {
     std::cout << "[1]" << std::endl;
   } else {
-    unsigned int addr = f >> 1;
+    size_t addr = f >> 1;
     if (nodeMarked(f, 1)) {
       std::cout << "["
-           << (isNegPhase(f) ? "~" : "")
-           << addr
-           << "]"
-           << std::endl;
+                << (isNegPhase(f) ? "~" : "")
+                << addr
+                << "]"
+                << std::endl;
     } else {
       markNode(f, 1);
       std::cout << (isNegPhase(f) ? "~" : "");
@@ -177,7 +177,7 @@ BddImpl::printRec(const BDD f, const unsigned int level) const
       std::cout << addr;
       std::cout.fill(' ');
       std::cout << ":" << getIndex(f)
-           << std::endl;
+                << std::endl;
 
       printRec(getHi(f), level+1);
       printRec(getLo(f), level+1);

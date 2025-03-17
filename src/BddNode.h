@@ -14,7 +14,7 @@ namespace abide {
 //      Class    : BddNode
 //      Abstract : A Bdd node.
 class BddNode {
-public:
+ public:
   BddNode() = default;
   ~BddNode() = default;
 
@@ -30,8 +30,8 @@ public:
   BddNode &operator=(BddNode &&) = default; // Move assignment
 #endif
 
-  void setIndex(unsigned int i) { _index = i; };
-  unsigned int getIndex() const { return _index; };
+  void setIndex(BddIndex i) { _index = i; };
+  BddIndex getIndex() const { return _index; };
 
   void setHi(BDD n) { _hi = n;};
   BDD getHi() const { return _hi; };
@@ -42,13 +42,13 @@ public:
   BDD getNext() const { return _next; };
 
   // Avoid using n=0 unless gc is locked.
-  void setMark(unsigned int n) {
+  void setMark(uint32_t n) {
     assert(n < 8);
     _marks |= (1<<n); };
-  void clrMark(unsigned int n) {
+  void clrMark(uint32_t n) {
     assert(n < 8);
     _marks &= ~(1<<n); };
-  bool marked(unsigned int n) {
+  bool marked(uint32_t n) {
     assert(n < 8);
     return _marks & (1<<n); };
 
@@ -60,9 +60,9 @@ public:
 
   void incRef() { ++_xrefs; };
   void decRef() { --_xrefs; };
-  unsigned int numRefs() const { return _xrefs; };
-  void setRefs(unsigned int r) { _xrefs = r; };
-private:
+  uint32_t numRefs() const { return _xrefs; };
+  void setRefs(uint32_t r) { _xrefs = r; };
+ private:
   BDD _hi;
   BDD _lo;
   BDD _next;

@@ -16,28 +16,27 @@ namespace abide {
 //      Class    : UniqTbls
 //      Abstract : Unique table for nodes with the same index (level).
 class UniqTbl {
-public:
+ public:
   UniqTbl();
   ~UniqTbl() {
-    // (_tbl) delete [] _tbl;
   };
 
-  unsigned int size() const { return _size; };
-  unsigned int numNodes() const { return _numNodes; };
+  size_t size() const { return _size; };
+  size_t numNodes() const { return _numNodes; };
 
   BDD findOrAdd(BddImpl &impl,
                 int index,
                 BDD hi,
                 BDD lo);
   void resize(BddImpl &impl);
-  BDD getHash(unsigned int hdx) const;
+  BDD getHash(size_t hdx) const;
   void putHash(BddImpl &impl,
                BDD f,
-               unsigned int hdx);
+               size_t hdx);
   void putHash(BddImpl &impl,
                BDD f);
 
-  unsigned int getMask() { return _mask; };
+  size_t getMask() { return _mask; };
 
   void clear(BddImpl &impl, BDDVec &nodes);
   void setProcessed(bool b) { _processed = b; };
@@ -48,11 +47,11 @@ public:
     _tbl = nullptr;
   }; // freeTbl
 
-private:
+ private:
   BDD *_tbl;
-  unsigned int _size;
-  unsigned int _mask;
-  unsigned int _numNodes;
+  size_t _size;
+  size_t _mask;
+  size_t _numNodes;
   bool _processed:1;
 }; // UniqTbl
 
@@ -61,7 +60,7 @@ using UniqTblVec = std::vector<UniqTbl>;
 //      Class    : UniqTbls
 //      Abstract : All unique tables.
 class UniqTbls {
-public:
+ public:
   UniqTbls(BddImpl &impl) : _impl(impl) {}; // CTOR
   ~UniqTbls(); // DTOR
 
@@ -70,11 +69,11 @@ public:
   UniqTbls(UniqTbls &&) = delete; // Move CTOR
   UniqTbls &operator=(UniqTbls &&) = delete; // Move assignment
 
-  void resize(unsigned int nuSize) { _tables.resize(nuSize); };
-  UniqTbl & operator[](unsigned int idx) { return _tables[idx]; };
+  void resize(size_t nuSize) { _tables.resize(nuSize); };
+  UniqTbl & operator[](size_t idx) { return _tables[idx]; };
   auto begin() { return _tables.begin(); };
   auto end() { return _tables.end(); };
-private:
+ private:
   BddImpl &_impl;
   UniqTblVec _tables;
 }; // UniqTbls
