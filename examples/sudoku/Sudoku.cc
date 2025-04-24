@@ -67,6 +67,9 @@ public:
   void addLine(std::istream &strm, int row);
   std::vector<int> parseLine(std::string &line);
   bool addEntry(int row, int col, int val);
+  bool fromFile() { return _input.size(); };
+  bool isComment(std::string &line) {
+    return line[0] == '#'; };
 
   void gatherExclusionConstraints();
   void gatherRowConstraints();
@@ -148,7 +151,8 @@ Sudoku::readPuzzleConstraints(std::istream &strm)
 {
   for (int row = 0; row < _N; ++row) {
     addLine(strm, row);
-  } //
+  } // for
+  cout << GREEN << "\nSolving ..." << NORMAL << endl;
 } // Sudoku::readPuzzleConstraints
 
 
@@ -159,10 +163,20 @@ Sudoku::addLine(std::istream &strm, int row)
 {
   std::string line;
   std::vector<int> entries;
-  do {
+  while (true) {
+    std::cout << row+1 << ": ";
     std::getline(strm, line);
     entries = parseLine(line);
-  } while (entries.size() != _N);
+    if (fromFile()) {
+      std::cout << line << std::endl;
+    } // if
+
+    if (entries.size() == _N) {
+      break;
+    } else if (! isComment(line)) {
+      std::cout << '\a' << std::flush;
+    } // if
+  } // while
 
   for (int col = 0; col < _N; ++col) {
     int val = entries[col];
@@ -183,7 +197,7 @@ std::vector<int>
 Sudoku::parseLine(std::string &line)
 {
   std::vector<int> entries;
-  if (line[0] != '#') {
+  if (! isComment(line)) {
     for (unsigned char c : line) {
       if (std::isspace(c)) {
       } else if (c == '.' ||
