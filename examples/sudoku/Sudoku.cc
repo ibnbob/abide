@@ -11,6 +11,7 @@
 using namespace abide;
 
 #include <fstream>
+#include <sys/stat.h>
 
 using std::cin;
 using std::cout;
@@ -20,6 +21,16 @@ using std::endl;
 namespace {
 const int MAX_SOLUTIONS = 4;
 } // anonymous
+
+
+//      Function : fileExists
+//      Abstract : Test if file exists.
+bool
+fileExists(const std::string &fname)
+{
+  struct stat buffer;
+  return (stat(fname.c_str(), &buffer) == 0);
+} // fileExists
 
 
 //      Struct   : GenConstraint
@@ -58,6 +69,7 @@ public:
   void readPuzzleConstraints();
   void buildCommonConstraints();
   void printSolutions();
+  void writePuzzleConstraints();
 
  private:
   using Entry = std::tuple<int, int, int>;
@@ -67,7 +79,7 @@ public:
   void addLine(std::istream &strm, int row);
   std::vector<int> parseLine(std::string &line);
   bool addEntry(int row, int col, int val);
-  bool fromFile() { return _input.size(); };
+  bool fromFile() { return _fname.size() && fileExists(_fname); };
   bool isComment(std::string &line) {
     return line[0] == '#'; };
 
@@ -97,7 +109,7 @@ public:
   // Data members.
   int _N = 9;
   int _M = 3;
-  std::string _input;
+  std::string _fname;
 
   Constraints _constraints;
 
@@ -113,7 +125,7 @@ Sudoku::Sudoku(std::string filename) :
   _mgr(_N*_N*_N)
 {
   _solution = _mgr.getOne();
-  _input = filename;
+  _fname = filename;
   _grid.resize(_N);
   for (auto &row : _grid) {
     row.resize(_N, 0);
@@ -129,16 +141,16 @@ Sudoku::Sudoku(std::string filename) :
 void
 Sudoku::readPuzzleConstraints()
 {
-  if (_input.empty()) {
+  if (_fname.empty() || !fileExists(_fname)) {
     readPuzzleConstraints(std::cin);
   } else {
     std::ifstream ifile;
-    ifile.open(_input);
+    ifile.open(_fname);
     if (ifile) {
       readPuzzleConstraints(ifile);
     } else {
       cerr << "Could not open file: "
-           << _input << endl;
+           << _fname << endl;
     } // if
   } // if
 } // Sudoku::readPuzzleConstraints
@@ -492,8 +504,8 @@ Sudoku::unpackCell(int c)
 } // Sudoku::unpackCell
 
 
-//      Function : Sudoku::printSolution
-//      Abstract : Print one solution.
+//      Function : Sudoku::printSolutions
+//      Abstract : Print solutions.
 void
 Sudoku::printSolutions()
 {
@@ -555,13 +567,37 @@ Sudoku::printSolution(Bdd cube)
         cout << BOLD << RED << -val << " ";
       } else {
         cout << NORMAL << val << " ";
-        val = 0;
       } // if
     } // for
     cout << endl;
   } // for
   cout << NORMAL;
 } // Sudoku::printSolution
+
+
+//      Function : Sudoku::writePuzzleConstraints
+//      Abstract : If a filename was specified on the command line,
+//      and the file was not used as input, then write a file with
+//      this puzzle's constraints.
+void
+Sudoku::writePuzzleConstraints()
+{
+  if (!_fname.empty() && !fileExists(_fname)) {
+    std::ofstream ofile;
+    ofile.open(_fname);
+
+    for (auto &row : _grid) {
+      for (auto &val : row) {
+        if (val < 0) {
+          ofile << -val << " ";
+        } else {
+          ofile << ". ";
+        } // if
+      } // for
+      ofile << endl;
+    } // for
+  } // if
+} // Sudoku::writePuzzleConstraints
 
 
 //      Function : main
@@ -578,6 +614,7 @@ main(int argc, char *argv[])
   sudoku.readPuzzleConstraints();
   sudoku.buildCommonConstraints();
   sudoku.printSolutions();
+  sudoku.writePuzzleConstraints();
 
   return 0;
 } // main
