@@ -4,6 +4,7 @@
 //
 
 #include "colors.h"
+#include "Args.h"
 #include "Timer.h"
 #include <Bdd.h>
 #include <BddUtils.h>
@@ -59,7 +60,8 @@ using Constraints = std::vector<ConstrVec>;
 //      Abstract : Class for solving Sudoku puzzles.
 class Sudoku {
 public:
-  Sudoku(std::string filename); // CTOR
+  Sudoku(std::string input,
+         std::string output); // CTOR
   ~Sudoku() = default; // DTOR
 
   Sudoku(const Sudoku &) = delete; // Copy CTOR
@@ -79,7 +81,7 @@ public:
   void addLine(std::istream &strm, int row);
   std::vector<int> parseLine(std::string &line);
   bool addEntry(int row, int col, int val);
-  bool fromFile() { return _fname.size() && fileExists(_fname); };
+  bool fromFile() { return _input.size() && fileExists(_input); };
   bool isComment(std::string &line) {
     return line[0] == '#'; };
 
@@ -109,7 +111,8 @@ public:
   // Data members.
   int _N = 9;
   int _M = 3;
-  std::string _fname;
+  std::string _input;
+  std::string _output;
 
   Constraints _constraints;
 
@@ -121,11 +124,13 @@ public:
 
 //      Function : Sudoku::Sudoku
 //      Abstract : CTOR with input file.
-Sudoku::Sudoku(std::string filename) :
+Sudoku::Sudoku(std::string input,
+               std::string output) :
   _mgr(_N*_N*_N)
 {
   _solution = _mgr.getOne();
-  _fname = filename;
+  _input = input;
+  _output = output;
   _grid.resize(_N);
   for (auto &row : _grid) {
     row.resize(_N, 0);
@@ -141,16 +146,16 @@ Sudoku::Sudoku(std::string filename) :
 void
 Sudoku::readPuzzleConstraints()
 {
-  if (_fname.empty() || !fileExists(_fname)) {
+  if (_input.empty() || !fileExists(_input)) {
     readPuzzleConstraints(std::cin);
   } else {
     std::ifstream ifile;
-    ifile.open(_fname);
+    ifile.open(_input);
     if (ifile) {
       readPuzzleConstraints(ifile);
     } else {
       cerr << "Could not open file: "
-           << _fname << endl;
+           << _input << endl;
     } // if
   } // if
 } // Sudoku::readPuzzleConstraints
@@ -175,11 +180,12 @@ Sudoku::addLine(std::istream &strm, int row)
 {
   std::string line;
   std::vector<int> entries;
+  bool readFile = fromFile();
   while (true) {
     std::cout << row+1 << ": ";
     std::getline(strm, line);
     entries = parseLine(line);
-    if (fromFile()) {
+    if (readFile) {
       std::cout << line << std::endl;
     } // if
 
@@ -582,9 +588,9 @@ Sudoku::printSolution(Bdd cube)
 void
 Sudoku::writePuzzleConstraints()
 {
-  if (!_fname.empty() && !fileExists(_fname)) {
+  if (!_output.empty()) {
     std::ofstream ofile;
-    ofile.open(_fname);
+    ofile.open(_output);
 
     for (auto &row : _grid) {
       for (auto &val : row) {
@@ -600,17 +606,49 @@ Sudoku::writePuzzleConstraints()
 } // Sudoku::writePuzzleConstraints
 
 
+//      Struct    : SudokuArgs
+//      Abstract : Argument parsing struct.
+struct SudokuArgs : public argparse::Args {
+  std::optional<std::string> &input =
+    kwarg("i,input", "name of optional input file.");
+  std::optional<std::string> &output =
+    kwarg("o,output", "name of optional output file.");
+
+  void prolog() override {
+    std::cout << "Solve a Sudoku puzzle instance."
+              << std::endl;
+  } // prolog
+
+  void epilog() override {
+    std::cout << R"(
+Solve a Sudoku puzzle instance. If an input file is specified and it
+exists, then the problem specification is read from there. Otherwise,
+input is taken from the terminal. Legal input is nine lines of nine
+characters from the set {'.', '0', ..., '9'}. White space is ignored.
+
+If an output file is specified, then the problem specification is written
+to that file. This file may then be used as an input file.
+)" << std::endl;
+  } // epilog
+}; // SudokuArgs
+
 //      Function : main
 //      Abstract : Driver
 int
 main(int argc, char *argv[])
 {
   Timer timer("sudoku");
+  auto args = argparse::parse<SudokuArgs>(argc, argv);
+
   std::string input;
-  if (argc == 2) {
-    input = argv[1];
+  std::string output;
+  if (args.input) {
+    input = args.input.value();
   } // if
-  Sudoku sudoku(input);
+  if (args.output) {
+    output = args.output.value();
+  } // if
+  Sudoku sudoku(input, output);
   sudoku.readPuzzleConstraints();
   sudoku.buildCommonConstraints();
   sudoku.printSolutions();
