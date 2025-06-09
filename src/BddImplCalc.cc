@@ -381,7 +381,7 @@ BddImpl::oneCube(BDD f)
   if (isConstant(f)) {
     return f;
   } else {
-    BddVar x = getBddVar(f);
+    BddIndex x = getIndex(f);
     BDD hi = oneCube(getXHi(f));
     if (isZero(hi)) {
       BDD lo = oneCube(getXLo(f));

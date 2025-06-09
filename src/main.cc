@@ -368,6 +368,15 @@ testOps()
   cout << "G = F.oneCube()" << endl;
   VALIDATE(G == a*~b*c);
 
+  // Test bug fix in oneCube().
+  Bdd cc = mgr.getLit(20);
+  Bdd dd = mgr.getLit(21);
+  F = (~a + ~b) * (cc + dd);
+  G = F.oneCube();
+  cout << "F = (~a + ~b) * (cc + dd)" << endl;
+  cout << "G = F.oneCube()" << endl;
+  VALIDATE(G == a*~b*cc);
+
   cout << endl;
 } // testOps
 
