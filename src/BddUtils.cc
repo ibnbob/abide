@@ -242,46 +242,8 @@ findXor(const Bdd &f)
 // Implementation of extractDnf().
 //
 
-//      Class    : Interval
-//      Abstract : Holds an incompletely specified function as an
-//      interval.
-class Interval {
- public:
-  Interval(Bdd f) : // CTOR
-    _min(f), _max(f) {};
-  Interval(Bdd min, Bdd max) : // CTOR
-    _min(min), _max(max)
-  {
-    assert(_min <= _max);
-  };
-  ~Interval() = default; // DTOR
-
-  Interval(const Interval &) = default; // Copy CTOR
-  Interval &operator=(const Interval &) = delete; // Copy assignment
-  Interval(Interval &&) = delete; // Move CTOR
-  Interval &operator=(Interval &&) = delete; // Move assignment
-
-  Bdd min() const { return _min; };
-  Bdd max() const { return _max; };
-  Bdd getTopVar() {
-    BddVar x = (_min.getIndex() < _max.getIndex()
-                ? _min.getTopVar()
-                : _max.getTopVar());
-    return _min.getMgr()->getLit(x);
-  } // getTopVar
-
-  bool contains(Bdd f) {
-    return _min <= f && f <= _max;
-  } // contains
-
- private:
-  Bdd _min;
-  Bdd _max;
-}; // Interval
-
 
 using DnfPair = std::pair<Bdd, Dnf>;
-
 
 //      Function : combineDnf
 //      Abstract : Combine the three DNF formulas w.r.t. the variable x.
@@ -322,15 +284,26 @@ dnf2Bdd(const BddMgr &mgr, Dnf &dnf)
 {
   Bdd sum = mgr.getZero();
   for (auto &term : dnf) {
-    Bdd prod = mgr.getOne();
-    for (auto &lit : term) {
-      prod *= mgr.getLit(lit);
-    } // for
+    Bdd prod = term2Bdd(mgr, term);
     sum += prod;
   } // for
 
   return sum;
 } // dnf2Bdd
+
+
+//      Function : term2Bdd
+//      Abstract : Create a BDD for this term.
+Bdd
+term2Bdd(const BddMgr &mgr, Term &term)
+{
+  Bdd prod = mgr.getOne();
+  for (auto &lit : term) {
+    prod *= mgr.getLit(lit);
+  } // for
+
+  return prod;
+} // term2Bdd
 
 
 //      Function : extractDnf
@@ -342,7 +315,7 @@ dnf2Bdd(const BddMgr &mgr, Dnf &dnf)
 //      Binary Decision Diagrams," IEICE Trans. Fundamentals,
 //      Vol. E76-A, No. 6, pp. 967-973, June 1993.
 DnfPair
-extractDnf(Interval &f)
+extractDnfPair(BddInterval &f)
 {
   Dnf dnf;
   if (f.min().isZero()) {
@@ -356,31 +329,31 @@ extractDnf(Interval &f)
 
   Bdd x = f.getTopVar();
 
-  Interval f0(f.min()/~x, f.max()/~x);
-  Interval f1(f.min()/ x, f.max()/ x);
+  BddInterval f0(f.min()/~x, f.max()/~x);
+  BddInterval f1(f.min()/ x, f.max()/ x);
 
-  Interval fp0(f0.min()*~f1.max(), f0.max());
-  Interval fp1(f1.min()*~f0.max(), f1.max());
+  BddInterval fp0(f0.min()*~f1.max(), f0.max());
+  BddInterval fp1(f1.min()*~f0.max(), f1.max());
 
-  auto [g0, dnf0] = extractDnf(fp0);
+  auto [g0, dnf0] = extractDnfPair(fp0);
   assert(g0 == dnf2Bdd(*x.getMgr(), dnf0));
-  assert(fp0.contains(g0));
-  auto [g1, dnf1] = extractDnf(fp1);
+  assert(g0 <= fp0);
+  auto [g1, dnf1] = extractDnfPair(fp1);
   assert(g1 == dnf2Bdd(*x.getMgr(), dnf1));
-  assert(fp1.contains(g1));
+  assert(g1 <= fp1);
 
-  Interval fpp0(f0.min()*~g0, f0.max());
-  Interval fpp1(f1.min()*~g1, f1.max());
-  Interval fStar(fpp0.min()+fpp1.min(), fpp0.max()*fpp1.max());
+  BddInterval fpp0(f0.min()*~g0, f0.max());
+  BddInterval fpp1(f1.min()*~g1, f1.max());
+  BddInterval fStar(fpp0.min()+fpp1.min(), fpp0.max()*fpp1.max());
 
-  auto [g2, dnf2] = extractDnf(fStar);
+  auto [g2, dnf2] = extractDnfPair(fStar);
   assert(g2 == dnf2Bdd(*x.getMgr(), dnf2));
-  assert(fStar.contains(g2));
+  assert(g2 <= fStar);
 
   Bdd g = ~x*g0 + x*g1 + g2;
   dnf = combineDnf(x, dnf0, dnf1, dnf2);
   assert(g == dnf2Bdd(*x.getMgr(), dnf));
-  assert(f.contains(g));
+  assert(g <= f);
 
   return {g, dnf};
 } // extractDnf
@@ -397,15 +370,21 @@ extractDnf(Interval &f)
 Dnf
 extractDnf(Bdd &f)
 {
-  Interval ff(f);
-  auto [g, dnf] = extractDnf(ff);
-
-  // for (auto &term : dnf) {
-  //   std::sort(term.begin(), term.end(),
-  //             [](int a, int b) { return std::abs(a) < std::abs(b);});
-  // } // for
-
+  BddInterval ff(f);
+  auto [g, dnf] = extractDnfPair(ff);
   return dnf;
 } // extractDnf
+
+
+
+//      Function : extractDnf
+//      Abstract : As above, but for an interval.
+Dnf
+extractDnf(BddInterval &ff)
+{
+  auto [g, dnf] = extractDnfPair(ff);
+  return dnf;
+} // extractDnf
+
 
 } // namespace abide

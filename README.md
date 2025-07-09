@@ -22,7 +22,8 @@ made some major changes:
   done using a mark and sweep technique. A side effect of this is that
   garbage collection no longer occurs while processing a BDD operation.
   If an operation fails, garbage collection is attempted and the
-  operation is retried. Nodes may also be collected after operations.
+  operation is retried. Unreferenced nodes may also be collected after
+  successful operations.
 - Several utility functions have been added that provide useful
   functionality. These are written using the external C++ interface
   and may be used as examples of coding with abide.
@@ -31,6 +32,9 @@ made some major changes:
   - findXor() - finds a non-trivial XOR term with smaller support.[^SS]
   - extractDnf() - Extracts an irredundant disjunctive normal form
     (_i.e,_sum-of products).[^Min]
+- A header-only implementation of intervals in
+  [BddInterval.h](src/BddInterval.h). Intervals are a representation of
+  incompletely-specified Boolean functions. See [^Bro] for details.
 - Also, there are three less useful example programs which may be
   instructional.
   - An n-queens solver.
@@ -65,7 +69,7 @@ The table below summarizes these differences.
 | multiple managers | yes | no | yes |
 | edge representation | 32-bit integer | 32-bit integer | pointer |
 | node size | 20 bytes | 20 bytes | 32 bytes |
-|inversion| $O(1)$ | $O(n)$ | $O(1)$ |
+| inversion | $O(1)$ | $O(n)$ | $O(1)$ |
 
 ## Installation and Building
 There is a minimal `configure` script that is used to specify the
@@ -142,29 +146,32 @@ f = a *b + ~a * c;
 assert(f/c == ~a + b);
 ```
 
-See [Bdd.h](src/Bdd.h) for the full API and
-[BddUtils.h](src/BddUtils.h) for the utility functions.
+See [Bdd.h](src/Bdd.h) for the full API, [BddInterval.h](src/BddInterval.h)
+for the interval interface, and [BddUtils.h](src/BddUtils.h) for the
+utility functions.
 
-[^Bry]: Bryant, "Graph-based algorithms for Boolean function
-manipulation," in IEEE Transactions on Computers, vol. C-35, no. 8,
+[^Bry]: R. E. Bryant, "Graph-based algorithms for Boolean function
+manipulation," *IEEE Transactions on Computers*, vol. C-35, no. 8,
 pp. 677-691, Aug. 1986.
 
 [^BRB]: K. S. Brace, R. L. Rudell and R. E. Bryant, "Efficient
-implementation of a BDD package," 27th ACM/IEEE Design Automation
-Conference, Orlando, FL, USA, 1990, pp. 40-45.
+implementation of a BDD package," *27th ACM/IEEE Design Automation
+Conference*, Orlando, FL, USA, 1990, pp. 40-45.
 
-[^Rud]: R. Rudell, "Dynamic variable ordering for ordered binary decision diagrams," Proceedings of 1993 International Conference on Computer Aided Design (ICCAD), Santa Clara, CA, USA, 1993, pp. 42-47.
+[^Rud]: R. Rudell, "Dynamic variable ordering for ordered binary decision diagrams," *Proceedings of 1993 International Conference on Computer Aided Design (ICCAD)*, Santa Clara, CA, USA, 1993, pp. 42-47.
 
 [^SS]: T. Stanion and C. Sechen, "Quasi-algebraic decompositions of
-switching functions," Proceedings Sixteenth Conference on Advanced
-Research in VLSI, Chapel Hill, NC, USA, 1995, pp. 358-367.
+switching functions," *Proceedings Sixteenth Conference on Advanced
+Research in VLSI*, Chapel Hill, NC, USA, 1995, pp. 358-367.
 
 [^Min]: S. Minato, "Fast generation of prime-irredundant covers from
-binary decision diagrams," IEICE Trans. Fundamentals, Vol. E76-A,
+binary decision diagrams," *IEICE Trans. Fundamentals*, Vol. E76-A,
 No. 6, pp. 967-973, June 1993.
+
+[^Bro]: F. M. Brown, *Boolean Reasoning*, Kluwer Academic Publishers, Boston, Dordecht, London, 1990.
 
 [^CBM]: O. Coudert, C. Berthet, and J. C. Madre. "Verification of
 synchronous sequential machines based on symbolic execution,"
-Proceedings of the International Workshop on Automatic Verification
-Methods for Finite State Systems, Springer-Verlag, Berlin, Heidelberg,
+*Proceedings of the International Workshop on Automatic Verification
+Methods for Finite State Systems*, Springer-Verlag, Berlin, Heidelberg,
 pp. 365–373, 1990.

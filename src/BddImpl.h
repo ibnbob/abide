@@ -50,6 +50,8 @@ class BddImpl {
   BDD getLit(BddLit lit);
   BDD getIthLit(BddIndex index);
   size_t countNodes(BDDVec &bdds) const;
+  bool isCube(BDD f);
+  bool isCubeRec(BDD f);
   void print(BDD f) const;
 
   // BddImplCalc.cc

@@ -92,6 +92,7 @@ class BddMgr {
   bool isConstant(const Bdd &f) const;
   bool isPosLit(const Bdd &f) const;
   bool isNegLit(const Bdd &f) const;
+  bool isCube(const Bdd &f) const;
 
   Bdd invert(BDD f) const;
   Bdd abs(BDD f) const;
@@ -181,6 +182,7 @@ class Bdd {
   bool isConstant() const;
   bool isPosLit() const;
   bool isNegLit() const;
+  bool isCube() const;
 
   // Cubes and support.
   Bdd cubeFactor() const;
@@ -230,7 +232,8 @@ class Bdd {
 
 // Inline function definitions for class Bdd
 
-// Construcion and assignment.
+// Construction and assignment.
+
 inline Bdd::Bdd(const Bdd &f) :
   _mgr(f._mgr), _me(f._me)
 {
@@ -263,6 +266,7 @@ inline Bdd& Bdd::operator=(Bdd &&f) {
 
 // Operator overloads.
 
+// NOT
 inline Bdd Bdd::operator~() const {
   assert(_mgr);
 
@@ -271,13 +275,14 @@ inline Bdd Bdd::operator~() const {
   return rtn;
 } // operator~
 
+// AND
 inline Bdd& Bdd::operator*=(const Bdd &rhs) {
   assert(_mgr);
   assert(_mgr == rhs._mgr);
 
   *this = _mgr->apply(_me, rhs._me, AND);
   return *this;
-} // Bdd::operator*
+} // Bdd::operator*=
 
 inline Bdd operator*(Bdd lhs, const Bdd &rhs) {
   lhs *= rhs;
@@ -298,6 +303,7 @@ inline Bdd operator+(Bdd lhs, const Bdd &rhs) {
   return lhs;
 } // operator+
 
+// XOR
 inline Bdd& Bdd::operator^=(const Bdd &rhs) {
   assert(_mgr);
   assert(_mgr == rhs._mgr);
@@ -311,6 +317,7 @@ inline Bdd operator^(Bdd lhs, const Bdd &rhs) {
   return lhs;
 } // operator^
 
+// Restrict
 inline Bdd& Bdd::operator/=(const Bdd &rhs) {
   assert(_mgr);
   assert(_mgr == rhs._mgr);
@@ -453,7 +460,15 @@ inline bool Bdd::isNegLit() const {
   assert(_mgr);
 
   return _mgr->isNegLit(*this);
-} // Bdd::isPosLit
+} // Bdd::isNegLit
+
+// Cubes and support.
+
+inline bool Bdd::isCube() const {
+  assert(_mgr);
+
+  return _mgr->isCube(*this);
+} // Bdd::isCube
 
 // Cubes and support.
 

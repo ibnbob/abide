@@ -5,6 +5,7 @@
 
 #include <Bdd.h>
 #include <BddUtils.h>
+#include <BddInterval.h>
 #include <iostream>
 using std::cout;
 using std::endl;
@@ -25,6 +26,7 @@ void testIte();
 void testProduct();
 void testXor();
 void testDnf();
+void testInterval();
 void testMisc();
 
 void printDnf(Dnf &dnf);
@@ -49,6 +51,7 @@ main()
   testProduct();
   testXor();
   testDnf();
+  testInterval();
   testMisc();
 
   return 0;
@@ -727,6 +730,13 @@ testDnf()
   VALIDATE(F == dnf2Bdd(mgr, dnf));
   printDnf(dnf);
 
+  Bdd F0 = (~a + c)*b;
+  Bdd F1 = b + ~c;
+  BddInterval FF(F0, F1);
+  dnf = extractDnf(FF);
+  VALIDATE(dnf2Bdd(mgr, dnf) <= FF);
+  printDnf(dnf);
+
   cout << endl;
 } // testDnf
 
@@ -827,6 +837,64 @@ testMisc()
   F = F1 * F2;
   VALIDATE(!(F1 <= ~F2));
 
+  VALIDATE(one.isCube());
+  VALIDATE(!(~one).isCube());
+  F = a * ~b * c;
+  VALIDATE(F.isCube());
+  F = ~F;
+  VALIDATE(!F.isCube());
+  F = a + ~b + c;
+  VALIDATE(!F.isCube());
+  F = ~F;
+  VALIDATE(F.isCube());
+
   mgr.printStats();
 } // testMisc
+
+
+//      Function : testInterval
+//      Abstract : Test the interval class.
+void
+testInterval()
+{
+  cout << "\n----------------------------------------------------------------"
+       << endl;
+  cout << "Interval Tests:" << endl;
+  cout << "----------------------------------------------------------------"
+       << endl;
+
+  BddMgr mgr;
+  Bdd a = mgr.getLit(1);
+  Bdd b = mgr.getLit(2);
+  Bdd c = mgr.getLit(3);
+
+  Bdd zero = mgr.getZero();
+  Bdd one = mgr.getOne();
+
+  BddInterval X1(mgr);
+  BddInterval X2; X2.toX(mgr);
+  VALIDATE(X1 == X2);
+  VALIDATE(X1 == ~X2);
+
+  BddInterval F = X1*a + b*X2;
+  cout << "F = a * X1 + b * X2" << endl;
+  VALIDATE(a+b <= F);
+  VALIDATE(a <= F);
+  VALIDATE(b <= F);
+  VALIDATE(zero <= F);
+  VALIDATE(!(a + b + c <= F));
+
+  VALIDATE(F.min() == zero);
+  VALIDATE(F.max() == a+b);
+
+  BddInterval G = (b + X1) * (c + ~X1);
+  VALIDATE(G.min() == (b * c));
+  VALIDATE(G.max() == one);
+
+  BddInterval H = F^G;
+  VALIDATE((F.min() ^ G.min()) <= H);
+  VALIDATE((F.min() ^ G.max()) <= H);
+  VALIDATE((F.max() ^ G.max()) <= H);
+  VALIDATE((F.max() ^ G.min()) <= H);
+} // testInterval
 

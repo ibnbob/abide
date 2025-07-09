@@ -239,7 +239,7 @@ BddMgr::isConstant(const Bdd &f) const
 
 
 //      Function : BddMgr::isPosLit
-//      Abstract : Return true if the bdd is a postive literal.
+//      Abstract : Return true if the bdd is a positive literal.
 bool
 BddMgr::isPosLit(const Bdd &f) const
 {
@@ -248,12 +248,21 @@ BddMgr::isPosLit(const Bdd &f) const
 
 
 //      Function : BddMgr::isNegLit
-//      Abstract : Return true if the bdd is a postive literal.
+//      Abstract : Return true if the bdd is a negative literal.
 bool
 BddMgr::isNegLit(const Bdd &f) const
 {
   return _impl->isNegLit(f._me);
 } // BddMgr::isNegLit
+
+
+//      Function : BddMgr::isCube
+//      Abstract : Return true if the bdd is a cube (product of literals).
+bool
+BddMgr::isCube(const Bdd &f) const
+{
+  return _impl->isCube(f._me);
+} // BddMgr::isCube
 
 
 //      Function : BddMgr::invert

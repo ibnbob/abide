@@ -139,6 +139,42 @@ BddImpl::countNodes(BDDVec &bdds) const
   return count;
 } // BddImpl::countNodes
 
+
+//      Function : BddImpl::isCube
+//      Abstract : Return true if f is a conjunction of literals. 1 is
+//      a cube, 0 is not.
+bool
+BddImpl::isCube(const BDD f)
+{
+  if (isZero(f)) {
+    return false;
+  } //
+  return isCubeRec(f);
+} // BddImpl::isCube
+
+
+//      Function : BddImpl::isCubeRec
+//      Abstract : Recursive step of isCube().
+bool
+BddImpl::isCubeRec(const BDD f)
+{
+  if (isOne(f)) {
+    return true;
+  } else {
+    assert(!isZero(f));
+    BDD f1 = getXHi(f);
+    BDD f0 = getXLo(f);
+    if (isZero(f1)) {
+      return isCubeRec(f0);
+    } else if (isZero(f0)) {
+      return isCubeRec(f1);
+    } // if
+  } // if
+
+  return false;
+} // BddImpl::isCube
+
+
 //      Function : BddImpl::print
 //      Abstract : Pretty print the BDD.
 void
@@ -148,7 +184,6 @@ BddImpl::print(BDD f) const
   unmarkNodes(f, 1);
   std::cout << std::endl;
 } // BddImpl::print
-
 
 
 //      Function : BddImpl::printRec
