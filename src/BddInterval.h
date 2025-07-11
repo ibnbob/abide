@@ -15,6 +15,7 @@
 #define BDDINTERVAL_H
 
 #include <Bdd.h>
+#include <iostream>
 
 namespace abide {
 
@@ -72,6 +73,13 @@ public:
   bool isOne() { return _min.isOne(); } ;
   bool isX() { return _min.isZero() && _max.isOne(); } ;
   bool valid() { return _min.valid() && _max.valid(); };
+
+  void print() {
+    std::cout << "\nInterval Min:" << std::endl;
+    _min.print();
+    std::cout << "Interval Max:" << std::endl;
+    _max.print();
+  } // print
 
  private:
   Bdd _min;

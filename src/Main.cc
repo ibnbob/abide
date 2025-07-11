@@ -886,15 +886,24 @@ testInterval()
 
   VALIDATE(F.min() == zero);
   VALIDATE(F.max() == a+b);
+  F.print();
 
   BddInterval G = (b + X1) * (c + ~X1);
+  cout << "G = (b + X1) * (c + ~X1)" << endl;
   VALIDATE(G.min() == (b * c));
   VALIDATE(G.max() == one);
+  G.print();
 
+  F = F + c;
+  G = G * ~a;
+  cout << "F = F + c" << endl;
+  cout << "G = G * ~a" << endl;
   BddInterval H = F^G;
+  cout << "H = F^G" << endl;
   VALIDATE((F.min() ^ G.min()) <= H);
   VALIDATE((F.min() ^ G.max()) <= H);
   VALIDATE((F.max() ^ G.max()) <= H);
   VALIDATE((F.max() ^ G.min()) <= H);
+  H.print();
 } // testInterval
 
